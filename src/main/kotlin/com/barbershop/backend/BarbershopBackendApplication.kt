@@ -1,4 +1,4 @@
-package com.barbershop.barbershop_backend
+package com.barbershop.backend
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
@@ -7,5 +7,6 @@ import org.springframework.boot.runApplication
 class BarbershopBackendApplication
 
 fun main(args: Array<String>) {
-	runApplication<BarbershopBackendApplication>(*args)
+    runApplication<BarbershopBackendApplication>(*args)
 }
+

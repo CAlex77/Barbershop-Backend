@@ -1,13 +1,3 @@
-package com.barbershop.barbershop_backend
+// placeholder file retained for history; legacy package removed.
+// Tests are now located at src/test/kotlin/com/barbershop/backend/BarbershopBackendApplicationTests.kt
 
-import org.junit.jupiter.api.Test
-import org.springframework.boot.test.context.SpringBootTest
-
-@SpringBootTest
-class BarbershopBackendApplicationTests {
-
-	@Test
-	fun contextLoads() {
-	}
-
-}
