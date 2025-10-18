@@ -1,28 +1,63 @@
--- Initial schema for Barbershop demo
--- Create basic tables for barbers, services and appointments
+-- V1__init_schema.sql
+-- Schema base com identidade, perfis e agendamentos.
 
+BEGIN;
+
+-- 1) Núcleo de identidade
+CREATE TABLE IF NOT EXISTS users (
+                                     user_id       BIGSERIAL PRIMARY KEY,
+                                     name          VARCHAR(255) NOT NULL,
+                                     email         VARCHAR(255) UNIQUE,
+                                     password_hash TEXT,
+                                     phone         VARCHAR(40),
+                                     role          TEXT NOT NULL DEFAULT 'client',        -- client | barber | admin...
+                                     created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 2) Perfil de cliente (1–1 com users)
+CREATE TABLE IF NOT EXISTS clients (
+                                       client_id BIGSERIAL PRIMARY KEY,
+                                       user_id   BIGINT NOT NULL UNIQUE
+                                           REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- 3) Perfil de barbeiro (N barbeiros, cada um vinculado a um user)
 CREATE TABLE IF NOT EXISTS barbers (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(120) NOT NULL,
-    phone VARCHAR(40)
+                                       barber_id BIGSERIAL PRIMARY KEY,
+                                       user_id   BIGINT NOT NULL
+                                           REFERENCES users(user_id) ON DELETE CASCADE,
+                                       name      VARCHAR(120) NOT NULL,
+                                       phone     VARCHAR(40)
 );
+CREATE INDEX IF NOT EXISTS idx_barbers_user_id ON barbers(user_id);
 
+-- 4) Serviços ofertados
 CREATE TABLE IF NOT EXISTS services (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(120) NOT NULL,
-    price NUMERIC(10,2) NOT NULL DEFAULT 0
+                                        service_id       BIGSERIAL PRIMARY KEY,
+                                        name             VARCHAR(120) NOT NULL,
+                                        price            NUMERIC(12,2) NOT NULL DEFAULT 0,
+                                        duration_minutes INT NOT NULL DEFAULT 30 CHECK (duration_minutes > 0),
+                                        is_active        BOOLEAN NOT NULL DEFAULT TRUE
 );
 
+-- 5) Agendamentos
 CREATE TABLE IF NOT EXISTS appointments (
-    id SERIAL PRIMARY KEY,
-    barber_id INTEGER NOT NULL REFERENCES barbers(id) ON DELETE CASCADE,
-    service_id INTEGER NOT NULL REFERENCES services(id) ON DELETE RESTRICT,
-    customer_name VARCHAR(120) NOT NULL,
-    start_time TIMESTAMP NOT NULL,
-    status VARCHAR(40) NOT NULL DEFAULT 'SCHEDULED'
+                                            appointment_id BIGSERIAL PRIMARY KEY,
+                                            barber_id      BIGINT  NOT NULL
+                                                REFERENCES barbers(barber_id) ON DELETE RESTRICT,
+                                            service_id     BIGINT  NOT NULL
+                                                REFERENCES services(service_id) ON DELETE RESTRICT,
+                                            client_id      BIGINT  NOT NULL
+                                                REFERENCES clients(client_id) ON DELETE RESTRICT,
+                                            start_time     TIMESTAMPTZ NOT NULL,
+                                            status         TEXT NOT NULL DEFAULT 'SCHEDULED',    -- booked/confirmed/done/canceled...
+                                            total_price    NUMERIC(12,2),
+                                            created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Helpful indexes
-CREATE INDEX IF NOT EXISTS idx_appointments_barber_id ON appointments(barber_id);
-CREATE INDEX IF NOT EXISTS idx_appointments_start_time ON appointments(start_time);
+-- Índices úteis
+CREATE INDEX IF NOT EXISTS idx_appts_barber_time ON appointments(barber_id, start_time);
+CREATE INDEX IF NOT EXISTS idx_appts_client_time ON appointments(client_id, start_time DESC);
+CREATE INDEX IF NOT EXISTS idx_services_active   ON services(is_active);
 
+COMMIT;
