@@ -4,9 +4,11 @@ import com.barbershop.backend.dto.request.ServiceRequest
 import com.barbershop.backend.dto.response.ServiceResponse
 import com.barbershop.backend.entity.Service
 import com.barbershop.backend.repository.ServiceRepository
+import jakarta.validation.Valid
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.net.URI
 
 @RestController
 @RequestMapping("/api/v1")
@@ -24,18 +26,20 @@ class ServicesController(
             .orElse(ResponseEntity.notFound().build())
 
     @PostMapping("/services", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun create(@RequestBody req: ServiceRequest): ServiceResponse {
+    fun create(@RequestBody @Valid req: ServiceRequest): ResponseEntity<ServiceResponse> {
         val entity = Service(
             name = req.name,
             price = req.price,
             durationMinutes = req.durationMinutes,
             isActive = req.isActive
         )
-        return serviceRepository.save(entity).toResponse()
+        val saved = serviceRepository.save(entity)
+        return ResponseEntity.created(URI.create("/api/v1/services/${saved.serviceId}"))
+            .body(saved.toResponse())
     }
 
     @PutMapping("/services/{id}", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun update(@PathVariable id: Long, @RequestBody req: ServiceRequest): ResponseEntity<ServiceResponse> {
+    fun update(@PathVariable id: Long, @RequestBody @Valid req: ServiceRequest): ResponseEntity<ServiceResponse> {
         val maybe = serviceRepository.findById(id)
         if (maybe.isEmpty) return ResponseEntity.notFound().build()
         val entity = maybe.get().apply {
@@ -63,4 +67,3 @@ class ServicesController(
         isActive = isActive
     )
 }
-

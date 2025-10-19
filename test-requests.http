@@ -1,31 +1,16 @@
-### Debug env
-GET http://localhost:8080/api/v1/debug/env
-Accept: application/json
-
-
-### List users
-GET http://localhost:8080/api/v1/usuarios
-Accept: application/json
-
-
-### List clients
-GET http://localhost:8080/api/v1/clientes
-Accept: application/json
-
 
 ### List barbers
-GET http://localhost:8080/api/v1/barbeiros
-Accept: application/json
-
+GET {{baseUrl}}/barbeiros
+Accept: {{accept}}
 
 ### List services
-GET http://localhost:8080/api/v1/services
-Accept: application/json
-
+GET {{baseUrl}}/services
+Accept: {{accept}}
 
 ### Create service
-POST http://localhost:8080/api/v1/services
+POST {{baseUrl}}/services
 Content-Type: application/json
+Accept: {{accept}}
 
 {
   "name": "Teste Serviço",
@@ -34,97 +19,10 @@ Content-Type: application/json
   "isActive": true
 }
 
-
 ### List appointments
-GET http://localhost:8080/api/v1/appointments
-Accept: application/json
-
-
-### Create appointment (adjust ids/time)
-POST http://localhost:8080/api/v1/appointments
-Content-Type: application/json
-
-{
-  "barberId": 1,
-  "serviceId": 1,
-  "clientId": 1,
-  "startTime": "2030-01-01T13:00:00Z"
-}
-
+GET {{baseUrl}}/appointments
+Accept: {{accept}}
 
 ### Filter appointments by barber
-GET http://localhost:8080/api/v1/appointments/by_barber?barberId=1
-Accept: application/json
-
-### Filter appointments by client
-GET http://localhost:8080/api/v1/appointments/by_client?clientId=1
-Accept: application/json
-
-
-### List working hours
-GET http://localhost:8080/api/v1/working_hours
-Accept: application/json
-
-
-### Create working hour
-POST http://localhost:8080/api/v1/working_hours
-Content-Type: application/json
-
-{
-  "barberId": 1,
-  "dayOfWeek": 1,
-  "startTime": "09:00:00",
-  "endTime": "18:00:00"
-}
-
-### Filter working hours by barber and day
-GET http://localhost:8080/api/v1/working_hours/search?barberId=1&dayOfWeek=1
-Accept: application/json
-
-
-### List blocked slots
-GET http://localhost:8080/api/v1/blocked_slots
-Accept: application/json
-
-
-### Create blocked slot
-POST http://localhost:8080/api/v1/blocked_slots
-Content-Type: application/json
-
-{
-  "barberId": 1,
-  "startTime": "2030-01-01T15:00:00Z",
-  "endTime": "2030-01-01T16:00:00Z",
-  "reason": "Maintenance"
-}
-
-### Filter blocked slots by barber
-GET http://localhost:8080/api/v1/blocked_slots/by_barber?barberId=1
-Accept: application/json
-
-
-### Placeholder endpoints (501)
-GET http://localhost:8080/api/v1/barbershops
-GET http://localhost:8080/api/v1/reviews
-GET http://localhost:8080/api/v1/payments
-GET http://localhost:8080/api/v1/notifications
-GET http://localhost:8080/api/v1/products
-
-
-### Quick curl examples (Windows cmd.exe)
-# curl http://localhost:8080/api/v1/debug/env
-# curl http://localhost:8080/api/v1/usuarios
-# curl http://localhost:8080/api/v1/clientes
-# curl http://localhost:8080/api/v1/barbeiros
-# curl http://localhost:8080/api/v1/services
-# curl -X POST http://localhost:8080/api/v1/services -H "Content-Type: application/json" -d "{\"name\":\"Teste Serviço\",\"price\":29.9,\"durationMinutes\":30,\"isActive\":true}"
-# curl http://localhost:8080/api/v1/appointments
-# curl -G http://localhost:8080/api/v1/appointments/by_barber --data-urlencode "barberId=1"
-# curl -G http://localhost:8080/api/v1/appointments/by_client --data-urlencode "clientId=1"
-# curl -X POST http://localhost:8080/api/v1/appointments -H "Content-Type: application/json" -d "{\"barberId\":1,\"serviceId\":1,\"clientId\":1,\"startTime\":\"2030-01-01T13:00:00Z\"}"
-# curl http://localhost:8080/api/v1/working_hours
-# curl -G http://localhost:8080/api/v1/working_hours/search --data-urlencode "barberId=1" --data-urlencode "dayOfWeek=1"
-# curl -X POST http://localhost:8080/api/v1/working_hours -H "Content-Type: application/json" -d "{\"barberId\":1,\"dayOfWeek\":1,\"startTime\":\"09:00:00\",\"endTime\":\"18:00:00\"}"
-# curl http://localhost:8080/api/v1/blocked_slots
-# curl -G http://localhost:8080/api/v1/blocked_slots/by_barber --data-urlencode "barberId=1"
-# curl -X POST http://localhost:8080/api/v1/blocked_slots -H "Content-Type: application/json" -d "{\"barberId\":1,\"startTime\":\"2030-01-01T15:00:00Z\",\"endTime\":\"2030-01-01T16:00:00Z\",\"reason\":\"Maintenance\"}"
+GET {{baseUrl}}/appointments/by_barber?barberId=1
+Accept: {{accept}}
