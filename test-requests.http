@@ -18,9 +18,92 @@ GET http://localhost:8080/api/v1/barbeiros
 Accept: application/json
 
 
+### List services
+GET http://localhost:8080/api/v1/services
+Accept: application/json
+
+
+### Create service
+POST http://localhost:8080/api/v1/services
+Content-Type: application/json
+
+{
+  "name": "Teste Serviço",
+  "price": 29.90,
+  "durationMinutes": 30,
+  "isActive": true
+}
+
+
+### List appointments
+GET http://localhost:8080/api/v1/appointments
+Accept: application/json
+
+
+### Create appointment (adjust ids/time)
+POST http://localhost:8080/api/v1/appointments
+Content-Type: application/json
+
+{
+  "barberId": 1,
+  "serviceId": 1,
+  "clientId": 1,
+  "startTime": "2030-01-01T13:00:00Z"
+}
+
+
+### List working hours
+GET http://localhost:8080/api/v1/working_hours
+Accept: application/json
+
+
+### Create working hour
+POST http://localhost:8080/api/v1/working_hours
+Content-Type: application/json
+
+{
+  "barberId": 1,
+  "dayOfWeek": 1,
+  "startTime": "09:00:00",
+  "endTime": "18:00:00"
+}
+
+
+### List blocked slots
+GET http://localhost:8080/api/v1/blocked_slots
+Accept: application/json
+
+
+### Create blocked slot
+POST http://localhost:8080/api/v1/blocked_slots
+Content-Type: application/json
+
+{
+  "barberId": 1,
+  "startTime": "2030-01-01T15:00:00Z",
+  "endTime": "2030-01-01T16:00:00Z",
+  "reason": "Maintenance"
+}
+
+
+### Placeholder endpoints (501)
+GET http://localhost:8080/api/v1/barbershops
+GET http://localhost:8080/api/v1/reviews
+GET http://localhost:8080/api/v1/payments
+GET http://localhost:8080/api/v1/notifications
+GET http://localhost:8080/api/v1/products
+
+
 ### Quick curl examples (Windows cmd.exe)
 # curl http://localhost:8080/api/v1/debug/env
 # curl http://localhost:8080/api/v1/usuarios
 # curl http://localhost:8080/api/v1/clientes
 # curl http://localhost:8080/api/v1/barbeiros
-
+# curl http://localhost:8080/api/v1/services
+# curl -X POST http://localhost:8080/api/v1/services -H "Content-Type: application/json" -d "{\"name\":\"Teste Serviço\",\"price\":29.90,\"durationMinutes\":30,\"isActive\":true}"
+# curl http://localhost:8080/api/v1/appointments
+# curl -X POST http://localhost:8080/api/v1/appointments -H "Content-Type: application/json" -d "{\"barberId\":1,\"serviceId\":1,\"clientId\":1,\"startTime\":\"2030-01-01T13:00:00Z\"}"
+# curl http://localhost:8080/api/v1/working_hours
+# curl -X POST http://localhost:8080/api/v1/working_hours -H "Content-Type: application/json" -d "{\"barberId\":1,\"dayOfWeek\":1,\"startTime\":\"09:00:00\",\"endTime\":\"18:00:00\"}"
+# curl http://localhost:8080/api/v1/blocked_slots
+# curl -X POST http://localhost:8080/api/v1/blocked_slots -H "Content-Type: application/json" -d "{\"barberId\":1,\"startTime\":\"2030-01-01T15:00:00Z\",\"endTime\":\"2030-01-01T16:00:00Z\",\"reason\":\"Maintenance\"}"

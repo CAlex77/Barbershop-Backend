@@ -19,6 +19,7 @@ class UsersController(
     private val barberRepository: BarberRepository
 ) {
 
+    // PT-BR
     @GetMapping("/usuarios", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getUsuarios(): List<UserResponse> {
         return userRepository.findAll().map { u ->
@@ -32,6 +33,11 @@ class UsersController(
         }
     }
 
+    // EN alias
+    @GetMapping("/users", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun getUsers(): List<UserResponse> = getUsuarios()
+
+    // PT-BR
     @GetMapping("/clientes", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getClientes(): List<ClientResponse> {
         val usersById = userRepository.findAll().associateBy { it.userId }
@@ -46,6 +52,11 @@ class UsersController(
         }
     }
 
+    // EN alias
+    @GetMapping("/clients", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun getClients(): List<ClientResponse> = getClientes()
+
+    // PT-BR
     @GetMapping("/barbeiros", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getBarbeiros(): List<BarberResponse> {
         val usersById = userRepository.findAll().associateBy { it.userId }
@@ -61,5 +72,8 @@ class UsersController(
             )
         }
     }
-}
 
+    // EN alias
+    @GetMapping("/barbers", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun getBarbers(): List<BarberResponse> = getBarbeiros()
+}
