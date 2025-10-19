@@ -7,5 +7,7 @@ import org.springframework.boot.runApplication
 class BarbershopBackendApplication
 
 fun main(args: Array<String>) {
+    // As variáveis de ambiente serão fornecidas pelo ambiente/IDE (EnvFile),
+    // por isso não carregamos `.env` aqui para evitar dependências extras.
     runApplication<BarbershopBackendApplication>(*args)
 }
