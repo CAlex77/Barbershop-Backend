@@ -23,6 +23,10 @@ class BlockedSlotsController(
             .map { ResponseEntity.ok(it.toResponse()) }
             .orElse(ResponseEntity.notFound().build())
 
+    @GetMapping("/blocked_slots/by_barber", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun listByBarber(@RequestParam barberId: Long): List<BlockedSlotResponse> =
+        blockedSlotRepository.findByBarberId(barberId).map { it.toResponse() }
+
     @PostMapping("/blocked_slots", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
     fun create(@RequestBody req: BlockedSlotRequest): BlockedSlotResponse {
         val entity = BlockedSlot(
@@ -62,4 +66,3 @@ class BlockedSlotsController(
         reason = reason
     )
 }
-

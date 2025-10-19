@@ -6,7 +6,9 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface AppointmentRepository : JpaRepository<Appointment, Long> {
+    @Suppress("unused")
     fun findByBarberId(barberId: Long): List<Appointment>
+
+    @Suppress("unused")
     fun findByClientId(clientId: Long): List<Appointment>
 }
-

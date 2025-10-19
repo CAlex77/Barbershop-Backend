@@ -23,6 +23,14 @@ class AppointmentsController(
             .map { ResponseEntity.ok(it.toResponse()) }
             .orElse(ResponseEntity.notFound().build())
 
+    @GetMapping("/appointments/by_barber", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun listByBarber(@RequestParam barberId: Long): List<AppointmentResponse> =
+        appointmentRepository.findByBarberId(barberId).map { it.toResponse() }
+
+    @GetMapping("/appointments/by_client", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun listByClient(@RequestParam clientId: Long): List<AppointmentResponse> =
+        appointmentRepository.findByClientId(clientId).map { it.toResponse() }
+
     @PostMapping(
         "/appointments",
         consumes = [MediaType.APPLICATION_JSON_VALUE],
@@ -76,4 +84,3 @@ class AppointmentsController(
         totalPrice = totalPrice
     )
 }
-

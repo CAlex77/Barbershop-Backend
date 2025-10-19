@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface BlockedSlotRepository : JpaRepository<BlockedSlot, Long> {
+    @Suppress("unused")
     fun findByBarberId(barberId: Long): List<BlockedSlot>
 }
-

@@ -23,6 +23,13 @@ class WorkingHoursController(
             .map { ResponseEntity.ok(it.toResponse()) }
             .orElse(ResponseEntity.notFound().build())
 
+    @GetMapping("/working_hours/search", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun searchByBarberAndDay(
+        @RequestParam barberId: Long,
+        @RequestParam dayOfWeek: Int
+    ): List<WorkingHourResponse> =
+        workingHourRepository.findByBarberIdAndDayOfWeek(barberId, dayOfWeek).map { it.toResponse() }
+
     @PostMapping("/working_hours", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
     fun create(@RequestBody req: WorkingHourRequest): WorkingHourResponse {
         val entity = WorkingHour(
@@ -62,4 +69,3 @@ class WorkingHoursController(
         endTime = endTime
     )
 }
-
