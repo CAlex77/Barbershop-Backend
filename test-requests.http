@@ -1,26 +1,28 @@
-### Debug env
-GET http://localhost:8080/api/v1/debug/env
-Accept: application/json
-
-
-### List users
-GET http://localhost:8080/api/v1/usuarios
-Accept: application/json
-
-
-### List clients
-GET http://localhost:8080/api/v1/clientes
-Accept: application/json
-
 
 ### List barbers
-GET http://localhost:8080/api/v1/barbeiros
-Accept: application/json
+GET {{baseUrl}}/barbeiros
+Accept: {{accept}}
 
+### List services
+GET {{baseUrl}}/services
+Accept: {{accept}}
 
-### Quick curl examples (Windows cmd.exe)
-# curl http://localhost:8080/api/v1/debug/env
-# curl http://localhost:8080/api/v1/usuarios
-# curl http://localhost:8080/api/v1/clientes
-# curl http://localhost:8080/api/v1/barbeiros
+### Create service
+POST {{baseUrl}}/services
+Content-Type: application/json
+Accept: {{accept}}
 
+{
+  "name": "Teste Serviço",
+  "price": 29.9,
+  "durationMinutes": 30,
+  "isActive": true
+}
+
+### List appointments
+GET {{baseUrl}}/appointments
+Accept: {{accept}}
+
+### Filter appointments by barber
+GET {{baseUrl}}/appointments/by_barber?barberId=1
+Accept: {{accept}}
