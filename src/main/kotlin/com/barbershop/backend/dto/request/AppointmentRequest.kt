@@ -1,12 +1,16 @@
 package com.barbershop.backend.dto.request
 
+import jakarta.validation.constraints.NotNull
 import java.time.OffsetDateTime
 
 data class AppointmentRequest(
-    val barberId: Long,
-    val serviceId: Long,
-    val clientId: Long,
-    val startTime: OffsetDateTime,
+    @field:NotNull
+    var barberId: Long,
+    @field:NotNull
+    var serviceId: Long,
+    @field:NotNull
+    var clientId: Long,
+    @field:NotNull
+    var startTime: OffsetDateTime,
     val status: String? = null
 )
-

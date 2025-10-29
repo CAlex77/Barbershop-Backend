@@ -4,15 +4,20 @@ import com.barbershop.backend.dto.request.BarberRequest
 import com.barbershop.backend.dto.response.BarberResponse
 import com.barbershop.backend.entity.Barber
 import com.barbershop.backend.repository.BarberRepository
+import jakarta.validation.Valid
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.net.URI
 
 @RestController
 @RequestMapping("/api/v1")
 class BarbersController(
     private val barberRepository: BarberRepository
 ) {
+
+    @GetMapping("/barbers", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun list(): List<BarberResponse> = barberRepository.findAll().map { it.toResponse() }
 
     @GetMapping("/barbers/{id}", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getById(@PathVariable id: Long): ResponseEntity<BarberResponse> =
@@ -21,17 +26,19 @@ class BarbersController(
             .orElse(ResponseEntity.notFound().build())
 
     @PostMapping("/barbers", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun create(@RequestBody req: BarberRequest): BarberResponse {
+    fun create(@RequestBody @Valid req: BarberRequest): ResponseEntity<BarberResponse> {
         val entity = Barber(
             userId = req.userId,
             name = req.name,
             phone = req.phone
         )
-        return barberRepository.save(entity).toResponse()
+        val saved = barberRepository.save(entity)
+        return ResponseEntity.created(URI.create("/api/v1/barbers/${saved.barberId}"))
+            .body(saved.toResponse())
     }
 
     @PutMapping("/barbers/{id}", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun update(@PathVariable id: Long, @RequestBody req: BarberRequest): ResponseEntity<BarberResponse> {
+    fun update(@PathVariable id: Long, @RequestBody @Valid req: BarberRequest): ResponseEntity<BarberResponse> {
         val maybe = barberRepository.findById(id)
         if (maybe.isEmpty) return ResponseEntity.notFound().build()
         val entity = maybe.get().apply {
@@ -54,7 +61,7 @@ class BarbersController(
         userId = userId,
         name = name,
         phone = phone,
-        userName = null,   // Enriquecimento com User opcional (mantemos simples aqui)
+        userName = null,   // keep simple enrichment optional
         userEmail = null
     )
 }
