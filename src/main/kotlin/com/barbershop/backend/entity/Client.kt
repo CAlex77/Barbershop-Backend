@@ -12,6 +12,7 @@ data class Client(
     var clientId: Long? = null,
 
     @Column(name = "user_id", nullable = false, unique = true)
-    var userId: Long = 0
-)
+    var userId: Long = 0,
 
+    var isActive: Boolean = true
+)

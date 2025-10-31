@@ -17,6 +17,7 @@ data class Barber(
     @Column(nullable = false)
     var name: String = "",
 
-    var phone: String? = null
-)
+    var phone: String? = null,
 
+    var isActive: Boolean = true
+)

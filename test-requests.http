@@ -55,7 +55,7 @@ Accept: {{accept}}
 }
 
 ###
-PUT {{baseUrl}}/clients/1
+PATCH {{baseUrl}}/clients/1
 Content-Type: application/json
 Accept: {{accept}}
 
@@ -116,7 +116,7 @@ Accept: {{accept}}
 
 {
   "name": "Haircut",
-  "price": { "value": "50.00" },
+  "price": { "value": 50.00 },
   "durationMinutes": 30,
   "isActive": true
 }
@@ -128,7 +128,7 @@ Accept: {{accept}}
 
 {
   "name": "Deluxe Haircut",
-  "price": { "value": "70.00" },
+  "price": { "value": 70.00 },
   "durationMinutes": 45,
   "isActive": true
 }

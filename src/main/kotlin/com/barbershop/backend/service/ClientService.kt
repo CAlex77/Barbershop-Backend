@@ -16,13 +16,18 @@ class ClientService(
     private val clientRepository: ClientRepository,
     private val userRepository: UserRepository
 ) {
-    fun list(page: Int, size: Int, sort: String?, dir: String?): PagedResponse<ClientResponse> {
+    fun list(page: Int, size: Int, sort: String?, dir: String?, q: String? = null, active: Boolean? = true): PagedResponse<ClientResponse> {
         val direction = if (dir?.equals("desc", true) == true) Sort.Direction.DESC else Sort.Direction.ASC
         val pageable = if (!sort.isNullOrBlank()) PageRequest.of(page, size, Sort.by(direction, sort)) else PageRequest.of(page, size)
         val pageRes = clientRepository.findAll(pageable)
         val usersById = userRepository.findAll().associateBy { it.userId }
+        val filtered = pageRes.content.filter { c ->
+            val u = usersById[c.userId]
+            (active == null || c.isActive == active) &&
+            (q.isNullOrBlank() || (u?.name?.contains(q, true) == true || u?.email?.contains(q, true) == true))
+        }
         return PagedResponse(
-            content = pageRes.content.map { c ->
+            content = filtered.map { c ->
                 val user = usersById[c.userId]
                 ClientResponse(c.clientId, c.userId, user?.name, user?.email)
             },
@@ -37,12 +42,13 @@ class ClientService(
 
     fun get(id: Long): ClientResponse? {
         val c = clientRepository.findById(id).orElse(null) ?: return null
+        if (!c.isActive) return null
         val user = userRepository.findById(c.userId).orElse(null)
         return ClientResponse(c.clientId, c.userId, user?.name, user?.email)
     }
 
     fun create(req: ClientRequest): ClientResponse {
-        val saved = clientRepository.save(Client(userId = req.userId))
+        val saved = clientRepository.save(Client(userId = req.userId, isActive = true))
         val user = userRepository.findById(saved.userId).orElse(null)
         return ClientResponse(saved.clientId, saved.userId, user?.name, user?.email)
     }
@@ -57,8 +63,11 @@ class ClientService(
     }
 
     fun delete(id: Long): Boolean {
-        if (!clientRepository.existsById(id)) return false
-        clientRepository.deleteById(id)
+        val maybe = clientRepository.findById(id)
+        if (maybe.isEmpty) return false
+        val entity = maybe.get()
+        entity.isActive = false
+        clientRepository.save(entity)
         return true
     }
 }

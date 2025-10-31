@@ -21,8 +21,10 @@ class ServicesController(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int,
         @RequestParam(required = false) sort: String?,
-        @RequestParam(required = false) dir: String?
-    ): PagedResponse<ServiceResponse> = serviceService.list(page, size, sort, dir)
+        @RequestParam(required = false) dir: String?,
+        @RequestParam(required = false) active: Boolean?,
+        @RequestParam(required = false) category: String?
+    ): PagedResponse<ServiceResponse> = serviceService.list(page, size, sort, dir, active, category)
 
     @GetMapping("/services/{id}", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getById(@PathVariable id: Long): ResponseEntity<ServiceResponse> =

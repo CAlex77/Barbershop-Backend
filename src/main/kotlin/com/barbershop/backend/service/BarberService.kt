@@ -16,13 +16,16 @@ class BarberService(
     private val barberRepository: BarberRepository,
     private val userRepository: UserRepository
 ) {
-    fun list(page: Int, size: Int, sort: String?, dir: String?): PagedResponse<BarberResponse> {
+    fun list(page: Int, size: Int, sort: String?, dir: String?, q: String? = null, active: Boolean? = true): PagedResponse<BarberResponse> {
         val direction = if (dir?.equals("desc", true) == true) Sort.Direction.DESC else Sort.Direction.ASC
         val pageable = if (!sort.isNullOrBlank()) PageRequest.of(page, size, Sort.by(direction, sort)) else PageRequest.of(page, size)
         val pageRes = barberRepository.findAll(pageable)
         val usersById = userRepository.findAll().associateBy { it.userId }
         return PagedResponse(
-            content = pageRes.content.map { b ->
+            content = pageRes.content.filter { b ->
+                val u = usersById[b.userId]
+                (active == null || b.isActive == active) && (q.isNullOrBlank() || (b.name.contains(q, true) || u?.name?.contains(q, true) == true))
+            }.map { b ->
                 val u = usersById[b.userId]
                 BarberResponse(b.barberId, b.userId, b.name, b.phone, u?.name, u?.email)
             },
@@ -37,12 +40,13 @@ class BarberService(
 
     fun get(id: Long): BarberResponse? {
         val b = barberRepository.findById(id).orElse(null) ?: return null
+        if (!b.isActive) return null
         val u = userRepository.findById(b.userId).orElse(null)
         return BarberResponse(b.barberId, b.userId, b.name, b.phone, u?.name, u?.email)
     }
 
     fun create(req: BarberRequest): BarberResponse {
-        val saved = barberRepository.save(Barber(userId = req.userId, name = req.name, phone = req.phone))
+        val saved = barberRepository.save(Barber(userId = req.userId, name = req.name, phone = req.phone, isActive = true))
         val u = userRepository.findById(saved.userId).orElse(null)
         return BarberResponse(saved.barberId, saved.userId, saved.name, saved.phone, u?.name, u?.email)
     }
@@ -61,8 +65,11 @@ class BarberService(
     }
 
     fun delete(id: Long): Boolean {
-        if (!barberRepository.existsById(id)) return false
-        barberRepository.deleteById(id)
+        val maybe = barberRepository.findById(id)
+        if (maybe.isEmpty) return false
+        val entity = maybe.get()
+        entity.isActive = false
+        barberRepository.save(entity)
         return true
     }
 }

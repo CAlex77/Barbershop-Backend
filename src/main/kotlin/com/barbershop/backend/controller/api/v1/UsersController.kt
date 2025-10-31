@@ -53,8 +53,10 @@ class UsersController(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int,
         @RequestParam(required = false) sort: String?,
-        @RequestParam(required = false) dir: String?
-    ): PagedResponse<ClientResponse> = clientService.list(page, size, sort, dir)
+        @RequestParam(required = false) dir: String?,
+        @RequestParam(required = false) q: String?,
+        @RequestParam(required = false) active: Boolean?
+    ): PagedResponse<ClientResponse> = clientService.list(page, size, sort, dir, q, active ?: true)
 
     @GetMapping("/clients/{id}", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getClient(@PathVariable id: Long): ResponseEntity<ClientResponse> =
@@ -67,7 +69,7 @@ class UsersController(
         return ResponseEntity.created(URI.create("/api/v1/clients/$id")).body(saved)
     }
 
-    @PutMapping("/clients/{id}", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @PatchMapping("/clients/{id}", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
     fun updateClient(@PathVariable id: Long, @RequestBody @Valid req: ClientRequest): ResponseEntity<ClientResponse> =
         clientService.update(id, req)?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
 

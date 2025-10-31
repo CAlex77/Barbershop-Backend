@@ -3,21 +3,26 @@ package com.barbershop.backend.service
 import com.barbershop.backend.dto.request.ServiceRequest
 import com.barbershop.backend.dto.response.PagedResponse
 import com.barbershop.backend.dto.response.ServiceResponse
-import com.barbershop.backend.entity.Service as ServiceEntity
 import com.barbershop.backend.repository.ServiceRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
+import com.barbershop.backend.entity.Service as ServiceEntity
 
 @Service
 @Suppress("unused")
 class ServiceService(
     private val serviceRepository: ServiceRepository
 ) {
-    fun list(page: Int, size: Int, sort: String?, dir: String?): PagedResponse<ServiceResponse> {
+    fun list(page: Int, size: Int, sort: String?, dir: String?, active: Boolean? = null, category: String? = null): PagedResponse<ServiceResponse> {
         val direction = if (dir?.equals("desc", true) == true) Sort.Direction.DESC else Sort.Direction.ASC
         val pageable = if (!sort.isNullOrBlank()) PageRequest.of(page, size, Sort.by(direction, sort)) else PageRequest.of(page, size)
-        val pageRes = serviceRepository.findAll(pageable)
+        val pageRes = when {
+            active != null && !category.isNullOrBlank() -> serviceRepository.findByIsActiveAndCategoryIgnoreCase(active, category, pageable)
+            active != null -> serviceRepository.findByIsActive(active, pageable)
+            !category.isNullOrBlank() -> serviceRepository.findByCategoryIgnoreCase(category, pageable)
+            else -> serviceRepository.findAll(pageable)
+        }
         return PagedResponse(
             content = pageRes.content.map { it.toResponse() },
             page = pageRes.number,
@@ -32,7 +37,9 @@ class ServiceService(
     fun get(id: Long): ServiceResponse? = serviceRepository.findById(id).map { it.toResponse() }.orElse(null)
 
     fun create(req: ServiceRequest): ServiceResponse {
-        val saved = serviceRepository.save(ServiceEntity(name = req.name, price = req.price, durationMinutes = req.durationMinutes, isActive = req.isActive))
+        val saved = serviceRepository.save(
+            ServiceEntity(name = req.name, price = req.price, durationMinutes = req.durationMinutes, isActive = req.isActive, category = req.category)
+        )
         return saved.toResponse()
     }
 
@@ -44,13 +51,17 @@ class ServiceService(
             price = req.price
             durationMinutes = req.durationMinutes
             isActive = req.isActive
+            category = req.category
         }
         return serviceRepository.save(entity).toResponse()
     }
 
     fun delete(id: Long): Boolean {
-        if (!serviceRepository.existsById(id)) return false
-        serviceRepository.deleteById(id)
+        val maybe = serviceRepository.findById(id)
+        if (maybe.isEmpty) return false
+        val entity = maybe.get()
+        entity.isActive = false
+        serviceRepository.save(entity)
         return true
     }
 

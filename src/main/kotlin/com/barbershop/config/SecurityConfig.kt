@@ -1,4 +1,4 @@
-package com.barbershop.config
+package com.barbershop.backend.config
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -17,4 +17,3 @@ class SecurityConfig {
         return http.build()
     }
 }
-
