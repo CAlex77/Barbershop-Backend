@@ -1,28 +1,252 @@
+@baseUrl = http://localhost:8080/api/v1
+@accept = application/json
 
-### List barbers
-GET {{baseUrl}}/barbeiros
+### Users
+GET {{baseUrl}}/users?page=0&size=10&sort=name&dir=asc
 Accept: {{accept}}
 
-### List services
-GET {{baseUrl}}/services
+###
+GET {{baseUrl}}/users/1
 Accept: {{accept}}
 
-### Create service
+###
+POST {{baseUrl}}/users
+Content-Type: application/json
+Accept: {{accept}}
+
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "phone": "+5511999999999",
+  "role": "client"
+}
+
+###
+PUT {{baseUrl}}/users/1
+Content-Type: application/json
+Accept: {{accept}}
+
+{
+  "name": "John X. Doe",
+  "email": "john@example.com",
+  "phone": "+5511888888888",
+  "role": "client"
+}
+
+###
+DELETE {{baseUrl}}/users/1
+Accept: {{accept}}
+
+### Clients
+GET {{baseUrl}}/clients?page=0&size=10
+Accept: {{accept}}
+
+###
+GET {{baseUrl}}/clients/1
+Accept: {{accept}}
+
+###
+POST {{baseUrl}}/clients
+Content-Type: application/json
+Accept: {{accept}}
+
+{
+  "userId": 1
+}
+
+###
+PATCH {{baseUrl}}/clients/1
+Content-Type: application/json
+Accept: {{accept}}
+
+{
+  "userId": 1
+}
+
+###
+DELETE {{baseUrl}}/clients/1
+Accept: {{accept}}
+
+### Barbers
+GET {{baseUrl}}/barbers?page=0&size=10&sort=name&dir=asc
+Accept: {{accept}}
+
+###
+GET {{baseUrl}}/barbers/1
+Accept: {{accept}}
+
+###
+POST {{baseUrl}}/barbers
+Content-Type: application/json
+Accept: {{accept}}
+
+{
+  "userId": 1,
+  "name": "Barber Bob",
+  "phone": "+5511777777777"
+}
+
+###
+PUT {{baseUrl}}/barbers/1
+Content-Type: application/json
+Accept: {{accept}}
+
+{
+  "userId": 1,
+  "name": "Barber Bob Jr",
+  "phone": "+5511666666666"
+}
+
+###
+DELETE {{baseUrl}}/barbers/1
+Accept: {{accept}}
+
+### Services
+GET {{baseUrl}}/services?page=0&size=10&sort=name&dir=asc
+Accept: {{accept}}
+
+###
+GET {{baseUrl}}/services/1
+Accept: {{accept}}
+
+###
 POST {{baseUrl}}/services
 Content-Type: application/json
 Accept: {{accept}}
 
 {
-  "name": "Teste Serviço",
-  "price": 29.9,
+  "name": "Haircut",
+  "price": { "value": 50.00 },
   "durationMinutes": 30,
   "isActive": true
 }
 
-### List appointments
-GET {{baseUrl}}/appointments
+###
+PUT {{baseUrl}}/services/1
+Content-Type: application/json
 Accept: {{accept}}
 
-### Filter appointments by barber
-GET {{baseUrl}}/appointments/by_barber?barberId=1
+{
+  "name": "Deluxe Haircut",
+  "price": { "value": 70.00 },
+  "durationMinutes": 45,
+  "isActive": true
+}
+
+###
+DELETE {{baseUrl}}/services/1
+Accept: {{accept}}
+
+### Working hours
+GET {{baseUrl}}/working_hours?page=0&size=10
+Accept: {{accept}}
+
+###
+GET {{baseUrl}}/working_hours/1
+Accept: {{accept}}
+
+###
+GET {{baseUrl}}/working_hours/search?barberId=1&dayOfWeek=1
+Accept: {{accept}}
+
+###
+POST {{baseUrl}}/working_hours
+Content-Type: application/json
+Accept: {{accept}}
+
+{
+  "barberId": 1,
+  "dayOfWeek": 1,
+  "startTime": "09:00:00",
+  "endTime": "18:00:00"
+}
+
+###
+PUT {{baseUrl}}/working_hours/1
+Content-Type: application/json
+Accept: {{accept}}
+
+{
+  "barberId": 1,
+  "dayOfWeek": 1,
+  "startTime": "10:00:00",
+  "endTime": "19:00:00"
+}
+
+###
+DELETE {{baseUrl}}/working_hours/1
+Accept: {{accept}}
+
+### Blocked slots
+GET {{baseUrl}}/blocked_slots?page=0&size=10
+Accept: {{accept}}
+
+###
+GET {{baseUrl}}/blocked_slots/1
+Accept: {{accept}}
+
+###
+POST {{baseUrl}}/blocked_slots
+Content-Type: application/json
+Accept: {{accept}}
+
+{
+  "barberId": 1,
+  "startTime": "2025-10-28T09:00:00Z",
+  "endTime": "2025-10-28T10:00:00Z",
+  "reason": "Lunch"
+}
+
+###
+PUT {{baseUrl}}/blocked_slots/1
+Content-Type: application/json
+Accept: {{accept}}
+
+{
+  "barberId": 1,
+  "startTime": "2025-10-28T11:00:00Z",
+  "endTime": "2025-10-28T12:00:00Z",
+  "reason": "Meeting"
+}
+
+###
+DELETE {{baseUrl}}/blocked_slots/1
+Accept: {{accept}}
+
+### Appointments
+GET {{baseUrl}}/appointments?page=0&size=10&sort=startTime&dir=asc
+Accept: {{accept}}
+
+###
+GET {{baseUrl}}/appointments/1
+Accept: {{accept}}
+
+###
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+Accept: {{accept}}
+
+{
+  "barberId": 1,
+  "serviceId": 1,
+  "clientId": 1,
+  "startTime": "2025-10-28T13:00:00Z",
+  "status": "SCHEDULED"
+}
+
+###
+PUT {{baseUrl}}/appointments/1
+Content-Type: application/json
+Accept: {{accept}}
+
+{
+  "barberId": 1,
+  "serviceId": 1,
+  "clientId": 1,
+  "startTime": "2025-10-28T14:00:00Z",
+  "status": "SCHEDULED"
+}
+
+###
+DELETE {{baseUrl}}/appointments/1
 Accept: {{accept}}

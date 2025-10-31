@@ -34,6 +34,8 @@ data class Appointment(
     var totalPrice: BigDecimal? = null,
 
     @Column(name = "created_at", nullable = false)
-    var createdAt: OffsetDateTime = OffsetDateTime.now()
-)
+    var createdAt: OffsetDateTime = OffsetDateTime.now(),
 
+    @Version
+    var version: Long? = 0
+)

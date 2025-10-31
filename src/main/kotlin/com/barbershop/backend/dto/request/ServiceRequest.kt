@@ -11,8 +11,9 @@ data class ServiceRequest(
     val name: String,
     @field:NotNull
     @field:DecimalMin("0.0")
-    val price: BigDecimal,
+    var price: BigDecimal,
     @field:Min(1)
     val durationMinutes: Int,
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    val category: String? = null
 )

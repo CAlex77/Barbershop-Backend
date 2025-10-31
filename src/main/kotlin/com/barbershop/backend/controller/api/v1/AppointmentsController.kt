@@ -2,50 +2,48 @@ package com.barbershop.backend.controller.api.v1
 
 import com.barbershop.backend.dto.request.AppointmentRequest
 import com.barbershop.backend.dto.response.AppointmentResponse
-import com.barbershop.backend.entity.Appointment
-import com.barbershop.backend.repository.AppointmentRepository
+import com.barbershop.backend.dto.response.PagedResponse
+import com.barbershop.backend.service.AppointmentService
+import jakarta.validation.Valid
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.net.URI
 
 @RestController
 @RequestMapping("/api/v1")
 class AppointmentsController(
-    private val appointmentRepository: AppointmentRepository
+    private val appointmentService: AppointmentService
 ) {
 
     @GetMapping("/appointments", produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun list(): List<AppointmentResponse> = appointmentRepository.findAll().map { it.toResponse() }
+    fun list(
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int,
+        @RequestParam(required = false) sort: String?,
+        @RequestParam(required = false) dir: String?
+    ): PagedResponse<AppointmentResponse> = appointmentService.list(page, size, sort, dir)
 
     @GetMapping("/appointments/{id}", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getById(@PathVariable id: Long): ResponseEntity<AppointmentResponse> =
-        appointmentRepository.findById(id)
-            .map { ResponseEntity.ok(it.toResponse()) }
-            .orElse(ResponseEntity.notFound().build())
+        appointmentService.get(id)?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
 
     @GetMapping("/appointments/by_barber", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun listByBarber(@RequestParam barberId: Long): List<AppointmentResponse> =
-        appointmentRepository.findByBarberId(barberId).map { it.toResponse() }
+        appointmentService.listByBarber(barberId)
 
     @GetMapping("/appointments/by_client", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun listByClient(@RequestParam clientId: Long): List<AppointmentResponse> =
-        appointmentRepository.findByClientId(clientId).map { it.toResponse() }
+        appointmentService.listByClient(clientId)
 
     @PostMapping(
         "/appointments",
         consumes = [MediaType.APPLICATION_JSON_VALUE],
         produces = [MediaType.APPLICATION_JSON_VALUE]
     )
-    fun create(@RequestBody req: AppointmentRequest): ResponseEntity<AppointmentResponse> {
-        val entity = Appointment(
-            barberId = req.barberId,
-            serviceId = req.serviceId,
-            clientId = req.clientId,
-            startTime = req.startTime,
-            status = req.status ?: "SCHEDULED"
-        )
-        val saved = appointmentRepository.save(entity)
-        return ResponseEntity.ok(saved.toResponse())
+    fun create(@RequestBody @Valid req: AppointmentRequest): ResponseEntity<AppointmentResponse> {
+        val saved = appointmentService.create(req)
+        return ResponseEntity.created(URI.create("/api/v1/appointments/${saved.appointmentId}")).body(saved)
     }
 
     @PutMapping(
@@ -53,34 +51,10 @@ class AppointmentsController(
         consumes = [MediaType.APPLICATION_JSON_VALUE],
         produces = [MediaType.APPLICATION_JSON_VALUE]
     )
-    fun update(@PathVariable id: Long, @RequestBody req: AppointmentRequest): ResponseEntity<AppointmentResponse> {
-        val maybe = appointmentRepository.findById(id)
-        if (maybe.isEmpty) return ResponseEntity.notFound().build()
-        val entity = maybe.get().apply {
-            barberId = req.barberId
-            serviceId = req.serviceId
-            clientId = req.clientId
-            startTime = req.startTime
-            status = req.status ?: status
-        }
-        return ResponseEntity.ok(appointmentRepository.save(entity).toResponse())
-    }
+    fun update(@PathVariable id: Long, @RequestBody @Valid req: AppointmentRequest): ResponseEntity<AppointmentResponse> =
+        appointmentService.update(id, req)?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
 
     @DeleteMapping("/appointments/{id}")
     fun delete(@PathVariable id: Long): ResponseEntity<Void> =
-        if (appointmentRepository.existsById(id)) {
-            appointmentRepository.deleteById(id)
-            ResponseEntity.noContent().build()
-        } else ResponseEntity.notFound().build()
-
-    private fun Appointment.toResponse() = AppointmentResponse(
-        appointmentId = appointmentId,
-        barberId = barberId,
-        serviceId = serviceId,
-        clientId = clientId,
-        startTime = startTime,
-        endTime = endTime,
-        status = status,
-        totalPrice = totalPrice
-    )
+        if (appointmentService.delete(id)) ResponseEntity.noContent().build() else ResponseEntity.notFound().build()
 }

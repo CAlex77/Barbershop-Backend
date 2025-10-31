@@ -21,6 +21,7 @@ data class Service(
     var durationMinutes: Int = 30,
 
     @Column(name = "is_active", nullable = false)
-    var isActive: Boolean = true
-)
+    var isActive: Boolean = true,
 
+    var category: String? = null
+)
