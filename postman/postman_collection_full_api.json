@@ -1,0 +1,362 @@
+{
+  "info": {
+    "_postman_id": "422192c4-a4d3-4e92-91d1-0108cbf84972",
+    "name": "Barbershop Backend - Full API",
+    "description": "Collection to test the full API (auth + resources) of the Barbershop backend. Use the Environment file to set baseURL and token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "28043775"
+  },
+  "item": [
+    {
+      "name": "Auth / Register",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"teste@exemplo.com\",\n  \"password\": \"secret123\",\n  \"phone\": \"+5511999999999\"\n}"
+        },
+        "url": { "raw": "{{baseURL}}/auth/register", "host": ["{{baseURL}}"], "path": ["auth","register"] },
+        "description": "Create a new user. Expected: HTTP 201 and user data in response."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": { "exec": [
+            "pm.test(\"Status code is 201 or 200\", function () {",
+            "  pm.expect(pm.response.code).to.be.oneOf([201,200]);",
+            "});",
+            "",
+            "try {",
+            "  var body = pm.response.json();",
+            "  pm.test(\"Response has userId and email\", function () {",
+            "    pm.expect(body).to.have.property('userId');",
+            "    pm.expect(body).to.have.property('email');",
+            "  });",
+            "} catch (e) {",
+            "  // ignore parse errors for non-json responses",
+            "}"
+          ], "type": "text/javascript" }
+        }
+      ]
+    },
+    {
+      "name": "Auth / Login",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"email\": \"teste@exemplo.com\",\n  \"password\": \"secret123\"\n}" },
+        "url": { "raw": "{{baseURL}}/auth/login", "host": ["{{baseURL}}"], "path": ["auth","login"] },
+        "description": "Login with email + password. Expected: HTTP 200 and { token: \"...\" }."
+      },
+      "event": [ {
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test(\"Login returns 200\", function () {",
+          "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+          "});",
+          "",
+          "try {",
+          "  var body = pm.response.json();",
+          "  pm.test(\"Response has token\", function () {",
+          "    pm.expect(body).to.have.property('token');",
+          "  });",
+          "  if (body && body.token) {",
+          "    pm.environment.set('token', body.token);",
+          "    console.log('✅ Token saved to environment variable');",
+          "  }",
+          "} catch (e) {",
+          "  console.log('❌ Token not found or response is not JSON');",
+          "}"
+        ], "type": "text/javascript" }
+      } ]
+    },
+    {
+      "name": "Auth / Me",
+      "request": {
+        "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/me", "host": ["{{baseURL}}"], "path": ["me"] },
+        "description": "Return current user info. Requires Authorization: Bearer <token>."
+      },
+      "event": [ { "listen": "test", "script": { "exec": [
+        "pm.test(\"Me returns 200\", function () {",
+        "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+        "});",
+        "try {",
+        "  var body = pm.response.json();",
+        "  pm.test(\"Response contains userId and email\", function () {",
+        "    pm.expect(body).to.have.property('userId');",
+        "    pm.expect(body).to.have.property('email');",
+        "  });",
+        "} catch (e) {",
+        "  // ignore parse errors",
+        "}"
+      ], "type": "text/javascript" } } ]
+    },
+    {
+      "name": "Users - List",
+      "request": {
+        "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/users?page=0&size=10&sort=name&dir=asc", "host": ["{{baseURL}}"], "path": ["users"], "query": [ { "key": "page", "value": "0" }, { "key": "size", "value": "10" }, { "key": "sort", "value": "name" }, { "key": "dir", "value": "asc" } ] },
+        "description": "List users (paged)."
+      }
+    },
+    {
+      "name": "Users - Get",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/users/1", "host": ["{{baseURL}}"], "path": ["users","1"] },
+        "description": "Get user by id (replace 1)."
+      }
+    },
+    {
+      "name": "Users - Create",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"+5511999999999\",\n  \"role\": \"client\"\n}" },
+        "url": { "raw": "{{baseURL}}/users", "host": ["{{baseURL}}"], "path": ["users"] }
+      }
+    },
+    {
+      "name": "Users - Update",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "PUT",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"name\": \"John X. Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"+5511888888888\",\n  \"role\": \"client\"\n}" },
+        "url": { "raw": "{{baseURL}}/users/1", "host": ["{{baseURL}}"], "path": ["users","1"] }
+      }
+    },
+    {
+      "name": "Users - Delete",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "DELETE",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/users/1", "host": ["{{baseURL}}"], "path": ["users","1"] }
+      }
+    },
+    {
+      "name": "Clients - List",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/clients?page=0&size=10", "host": ["{{baseURL}}"], "path": ["clients"], "query": [ { "key": "page", "value": "0" }, { "key": "size", "value": "10" } ] }
+      }
+    },
+    {
+      "name": "Appointments - List",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/appointments?page=0&size=10&sort=startTime&dir=asc", "host": ["{{baseURL}}"], "path": ["appointments"], "query": [ { "key": "page", "value": "0" }, { "key": "size", "value": "10" }, { "key": "sort", "value": "startTime" }, { "key": "dir", "value": "asc" } ] }
+      }
+    },
+    {
+      "name": "Appointments - Create",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"barberId\": 1,\n  \"serviceId\": 1,\n  \"clientId\": 1,\n  \"startTime\": \"2025-10-28T13:00:00Z\",\n  \"status\": \"SCHEDULED\"\n}" },
+        "url": { "raw": "{{baseURL}}/appointments", "host": ["{{baseURL}}"], "path": ["appointments"] }
+      }
+    },
+    {
+      "name": "Blocked Slots - List",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/blocked_slots?page=0&size=10", "host": ["{{baseURL}}"], "path": ["blocked_slots"], "query": [ { "key": "page", "value": "0" }, { "key": "size", "value": "10" } ] }
+      }
+    },
+    {
+      "name": "Services - List",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/services?page=0&size=10&sort=name&dir=asc", "host": ["{{baseURL}}"], "path": ["services"], "query": [ { "key": "page", "value": "0" }, { "key": "size", "value": "10" }, { "key": "sort", "value": "name" }, { "key": "dir", "value": "asc" } ] }
+      }
+    },
+    {
+      "name": "Services - Get",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/services/1", "host": ["{{baseURL}}"], "path": ["services","1"] }
+      }
+    },
+    {
+      "name": "Services - Create",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"name\": \"Haircut\",\n  \"price\": 50.00,\n  \"durationMinutes\": 30,\n  \"isActive\": true\n}" },
+        "url": { "raw": "{{baseURL}}/services", "host": ["{{baseURL}}"], "path": ["services"] }
+      }
+    },
+    {
+      "name": "Services - Update",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "PUT",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"name\": \"Deluxe Haircut\",\n  \"price\": 70.00,\n  \"durationMinutes\": 45,\n  \"isActive\": true\n}" },
+        "url": { "raw": "{{baseURL}}/services/1", "host": ["{{baseURL}}"], "path": ["services","1"] }
+      }
+    },
+    {
+      "name": "Services - Delete",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "DELETE",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/services/1", "host": ["{{baseURL}}"], "path": ["services","1"] }
+      }
+    },
+    {
+      "name": "Working Hours - List",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/working_hours?page=0&size=10", "host": ["{{baseURL}}"], "path": ["working_hours"], "query": [ { "key": "page", "value": "0" }, { "key": "size", "value": "10" } ] }
+      }
+    },
+    {
+      "name": "Working Hours - Get",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/working_hours/1", "host": ["{{baseURL}}"], "path": ["working_hours","1"] }
+      }
+    },
+    {
+      "name": "Working Hours - Search",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/working_hours/search?barberId=1&dayOfWeek=1", "host": ["{{baseURL}}"], "path": ["working_hours","search"], "query": [ { "key": "barberId", "value": "1" }, { "key": "dayOfWeek", "value": "1" } ] }
+      }
+    },
+    {
+      "name": "Working Hours - Create",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"barberId\": 1,\n  \"dayOfWeek\": 1,\n  \"startTime\": \"09:00:00\",\n  \"endTime\": \"18:00:00\"\n}" },
+        "url": { "raw": "{{baseURL}}/working_hours", "host": ["{{baseURL}}"], "path": ["working_hours"] }
+      }
+    },
+    {
+      "name": "Working Hours - Update",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "PUT",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"barberId\": 1,\n  \"dayOfWeek\": 1,\n  \"startTime\": \"10:00:00\",\n  \"endTime\": \"19:00:00\"\n}" },
+        "url": { "raw": "{{baseURL}}/working_hours/1", "host": ["{{baseURL}}"], "path": ["working_hours","1"] }
+      }
+    },
+    {
+      "name": "Working Hours - Delete",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "DELETE",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/working_hours/1", "host": ["{{baseURL}}"], "path": ["working_hours","1"] }
+      }
+    },
+    {
+      "name": "Barbers - List",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/barbers", "host": ["{{baseURL}}"], "path": ["barbers"] }
+      }
+    },
+    {
+      "name": "Barbers - Get",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/barbers/1", "host": ["{{baseURL}}"], "path": ["barbers","1"] }
+      }
+    },
+    {
+      "name": "Barbers - Create",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"userId\": 1,\n  \"name\": \"Barber Bob\",\n  \"phone\": \"+5511777777777\"\n}" },
+        "url": { "raw": "{{baseURL}}/barbers", "host": ["{{baseURL}}"], "path": ["barbers"] }
+      }
+    },
+    {
+      "name": "Barbers - Update",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "PUT",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"userId\": 1,\n  \"name\": \"Barber Bob Jr\",\n  \"phone\": \"+5511666666666\"\n}" },
+        "url": { "raw": "{{baseURL}}/barbers/1", "host": ["{{baseURL}}"], "path": ["barbers","1"] }
+      }
+    },
+    {
+      "name": "Barbers - Delete",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "DELETE",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/barbers/1", "host": ["{{baseURL}}"], "path": ["barbers","1"] }
+      }
+    },
+    {
+      "name": "Debug - Env",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" } ],
+        "url": { "raw": "{{baseURL}}/debug/env", "host": ["{{baseURL}}"], "path": ["debug","env"] },
+        "description": "Shows presence of DB env vars (masked)."
+      }
+    },
+    {
+      "name": "Reviews - List (placeholder)",
+      "request": { "method": "GET", "url": { "raw": "{{baseURL}}/reviews", "host": ["{{baseURL}}"], "path": ["reviews"] } }
+    },
+    {
+      "name": "Products - List (placeholder)",
+      "request": { "method": "GET", "url": { "raw": "{{baseURL}}/products", "host": ["{{baseURL}}"], "path": ["products"] } }
+    },
+    {
+      "name": "Payments - List (placeholder)",
+      "request": { "method": "GET", "url": { "raw": "{{baseURL}}/payments", "host": ["{{baseURL}}"], "path": ["payments"] } }
+    },
+    {
+      "name": "Notifications - List (placeholder)",
+      "request": { "method": "GET", "url": { "raw": "{{baseURL}}/notifications", "host": ["{{baseURL}}"], "path": ["notifications"] } }
+    }
+  ],
+  "variable": [
+    { "key": "baseURL", "value": "http://localhost:8080/api/v1", "type": "default" },
+    { "key": "token", "value": "", "type": "default" }
+  ]
+}

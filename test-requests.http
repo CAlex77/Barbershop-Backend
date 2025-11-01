@@ -1,6 +1,35 @@
 @baseUrl = http://localhost:8080/api/v1
 @accept = application/json
 
+### Authentication - register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+Accept: {{accept}}
+
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "password": "secret123",
+  "phone": "+5511999999999"
+}
+
+### Authentication - login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+Accept: {{accept}}
+
+{
+  "email": "test@example.com",
+  "password": "secret123"
+}
+
+
+
+### Authentication - me (requires Authorization header)
+GET {{baseUrl}}/me
+Accept: {{accept}}
+Authorization: Bearer <paste-token-here>
+
 ### Users
 GET {{baseUrl}}/users?page=0&size=10&sort=name&dir=asc
 Accept: {{accept}}
