@@ -25,7 +25,9 @@ data class User(
 
     var role: String = "client",
 
+    @Column(name = "avatar_path")
+    var avatarPath: String? = null,
+
     @Column(name = "created_at", nullable = false)
     var createdAt: OffsetDateTime = OffsetDateTime.now()
 )
-

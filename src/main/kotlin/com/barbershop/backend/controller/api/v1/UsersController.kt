@@ -6,18 +6,22 @@ import com.barbershop.backend.dto.response.ClientResponse
 import com.barbershop.backend.dto.response.PagedResponse
 import com.barbershop.backend.dto.response.UserResponse
 import com.barbershop.backend.service.ClientService
+import com.barbershop.backend.service.ImageStorageService
 import com.barbershop.backend.service.UserService
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
 import java.net.URI
 
 @RestController
 @RequestMapping("/api/v1")
 class UsersController(
     private val userService: UserService,
-    private val clientService: ClientService
+    private val clientService: ClientService,
+    private val imageStorageService: ImageStorageService
 ) {
 
     // Users CRUD
@@ -46,6 +50,22 @@ class UsersController(
     @DeleteMapping("/users/{id}")
     fun deleteUser(@PathVariable id: Long): ResponseEntity<Void> =
         if (userService.delete(id)) ResponseEntity.noContent().build() else ResponseEntity.notFound().build()
+
+    // Avatar upload and fetch
+    @PostMapping("/users/{id}/avatar", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun uploadAvatar(@PathVariable id: Long, @RequestPart("file") file: MultipartFile): ResponseEntity<UserResponse> =
+        userService.uploadAvatar(id, file)?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
+
+    @GetMapping("/users/{id}/avatar")
+    fun getAvatar(@PathVariable id: Long, request: HttpServletRequest): ResponseEntity<org.springframework.core.io.FileSystemResource> {
+        val pathId = userService.getAvatarPath(id) ?: return ResponseEntity.notFound().build()
+        val stored = imageStorageService.load(pathId)
+        val ifNoneMatch = request.getHeader("If-None-Match")
+        if (ifNoneMatch != null && ifNoneMatch == "\"${stored.etag}\"") {
+            return imageStorageService.notModified()
+        }
+        return imageStorageService.toResponseEntity(stored)
+    }
 
     // Clients CRUD
     @GetMapping("/clients", produces = [MediaType.APPLICATION_JSON_VALUE])

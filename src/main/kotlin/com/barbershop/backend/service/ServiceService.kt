@@ -7,12 +7,14 @@ import com.barbershop.backend.repository.ServiceRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
+import org.springframework.web.multipart.MultipartFile
 import com.barbershop.backend.entity.Service as ServiceEntity
 
 @Service
 @Suppress("unused")
 class ServiceService(
-    private val serviceRepository: ServiceRepository
+    private val serviceRepository: ServiceRepository,
+    private val imageStorageService: ImageStorageService
 ) {
     fun list(page: Int, size: Int, sort: String?, dir: String?, active: Boolean? = null, category: String? = null): PagedResponse<ServiceResponse> {
         val direction = if (dir?.equals("desc", true) == true) Sort.Direction.DESC else Sort.Direction.ASC
@@ -65,11 +67,23 @@ class ServiceService(
         return true
     }
 
+    fun uploadImage(serviceId: Long, file: MultipartFile): ServiceResponse? {
+        val entity = serviceRepository.findById(serviceId).orElse(null) ?: return null
+        val stored = imageStorageService.save(file)
+        entity.imagePath = stored.id
+        val saved = serviceRepository.save(entity)
+        return saved.toResponse()
+    }
+
+    fun getImagePath(serviceId: Long): String? =
+        serviceRepository.findById(serviceId).map { it.imagePath }.orElse(null)
+
     private fun ServiceEntity.toResponse() = ServiceResponse(
         serviceId = serviceId,
         name = name,
         price = price,
         durationMinutes = durationMinutes,
-        isActive = isActive
+        isActive = isActive,
+        imageUrl = serviceId?.let { if (imagePath != null) "/api/v1/services/${'$'}it/image" else null }
     )
 }

@@ -8,11 +8,13 @@ import com.barbershop.backend.repository.UserRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
+import org.springframework.web.multipart.MultipartFile
 
 @Service
 @Suppress("unused")
 class UserService(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val imageStorageService: ImageStorageService
 ) {
     fun list(page: Int, size: Int, sort: String?, dir: String?): PagedResponse<UserResponse> {
         val direction = if (dir?.equals("desc", true) == true) Sort.Direction.DESC else Sort.Direction.ASC
@@ -56,11 +58,23 @@ class UserService(
         return true
     }
 
+    fun uploadAvatar(userId: Long, file: MultipartFile): UserResponse? {
+        val user = userRepository.findById(userId).orElse(null) ?: return null
+        val stored = imageStorageService.save(file)
+        user.avatarPath = stored.id
+        val saved = userRepository.save(user)
+        return saved.toResponse()
+    }
+
+    fun getAvatarPath(userId: Long): String? =
+        userRepository.findById(userId).map { it.avatarPath }.orElse(null)
+
     private fun User.toResponse() = UserResponse(
         userId = userId,
         name = name,
         email = email,
         phone = phone,
-        role = role
+        role = role,
+        avatarUrl = if (avatarPath != null && userId != null) "/api/v1/users/${'$'}{userId}/avatar" else null
     )
 }

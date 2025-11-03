@@ -279,3 +279,35 @@ Accept: {{accept}}
 ###
 DELETE {{baseUrl}}/appointments/1
 Accept: {{accept}}
+
+### Upload avatar for a user
+POST {{baseUrl}}/users/1/avatar
+Accept: application/json
+Content-Type: multipart/form-data; boundary=WebKitFormBoundary
+
+--WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="avatar.jpg"
+Content-Type: image/jpeg
+
+< ./sample-images/avatar.jpg
+--WebKitFormBoundary--
+
+### Get user avatar
+GET {{baseUrl}}/users/1/avatar
+Accept: image/avif,image/webp,image/*,*/*
+
+### Upload image for service
+POST {{baseUrl}}/services/1/image
+Accept: application/json
+Content-Type: multipart/form-data; boundary=WebKitFormBoundary
+
+--WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="service.jpg"
+Content-Type: image/jpeg
+
+< ./sample-images/service.jpg
+--WebKitFormBoundary--
+
+### Get service image
+GET {{baseUrl}}/services/1/image
+Accept: image/avif,image/webp,image/*,*/*
