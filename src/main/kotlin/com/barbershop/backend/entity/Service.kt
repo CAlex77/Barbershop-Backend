@@ -23,5 +23,8 @@ data class Service(
     @Column(name = "is_active", nullable = false)
     var isActive: Boolean = true,
 
-    var category: String? = null
+    var category: String? = null,
+
+    @Column(name = "image_path")
+    var imagePath: String? = null
 )
