@@ -8,10 +8,13 @@ import com.barbershop.backend.dto.response.UserResponse
 import com.barbershop.backend.service.ClientService
 import com.barbershop.backend.service.ImageStorageService
 import com.barbershop.backend.service.UserService
+import com.barbershop.backend.security.UserPrincipal
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import java.net.URI
@@ -40,12 +43,28 @@ class UsersController(
     @PostMapping("/users", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
     fun createUser(@RequestBody @Valid req: UserRequest): ResponseEntity<UserResponse> {
         val saved = userService.create(req)
-        return ResponseEntity.created(URI.create("/api/v1/users/${saved.userId}")).body(saved)
+        return ResponseEntity.created(URI.create("/api/v1/users/${'$'}{saved.userId}")).body(saved)
     }
 
+    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.userId")
     @PutMapping("/users/{id}", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun updateUser(@PathVariable id: Long, @RequestBody @Valid req: UserRequest): ResponseEntity<UserResponse> =
-        userService.update(id, req)?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
+    fun updateUser(
+        @PathVariable id: Long,
+        @RequestBody @Valid req: UserRequest,
+        @AuthenticationPrincipal principal: UserPrincipal?
+    ): ResponseEntity<UserResponse> {
+        // Fallback authorization check in case method parameter name isn't available at runtime
+        if (principal != null) {
+            val isAdmin = principal.role.startsWith("ROLE_")
+                    && principal.role.uppercase().contains("ADMIN")
+            val isSelf = principal.userId == id
+            if (!isAdmin && !isSelf) {
+                return ResponseEntity.status(403).build()
+            }
+        }
+
+        return userService.update(id, req)?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
+    }
 
     @DeleteMapping("/users/{id}")
     fun deleteUser(@PathVariable id: Long): ResponseEntity<Void> =
@@ -61,7 +80,7 @@ class UsersController(
         val pathId = userService.getAvatarPath(id) ?: return ResponseEntity.notFound().build()
         val stored = imageStorageService.load(pathId)
         val ifNoneMatch = request.getHeader("If-None-Match")
-        if (ifNoneMatch != null && ifNoneMatch == "\"${stored.etag}\"") {
+        if (ifNoneMatch != null && ifNoneMatch == "\"${'$'}{stored.etag}\"") {
             return imageStorageService.notModified()
         }
         return imageStorageService.toResponseEntity(stored)
