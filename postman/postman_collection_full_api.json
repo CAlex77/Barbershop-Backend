@@ -19,7 +19,7 @@
           "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"teste@exemplo.com\",\n  \"password\": \"secret123\",\n  \"phone\": \"+5511999999999\"\n}"
         },
         "url": { "raw": "{{baseURL}}/auth/register", "host": ["{{baseURL}}"], "path": ["auth","register"] },
-        "description": "Create a new user. Expected: HTTP 201 and user data in response."
+        "description": "Create a new user. Expected: HTTP 201 and user data in response. NOTE: avatar/image is optional and is uploaded using the separate /users/{id}/avatar endpoint. Register does NOT accept image files."
       },
       "event": [
         {
@@ -80,7 +80,7 @@
         "method": "GET",
         "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
         "url": { "raw": "{{baseURL}}/me", "host": ["{{baseURL}}"], "path": ["me"] },
-        "description": "Return current user info. Requires Authorization: Bearer <token>."
+        "description": "Return current user info. Requires Authorization: Bearer <token>. Response now includes 'avatarUrl' when the user has uploaded an avatar."
       },
       "event": [ { "listen": "test", "script": { "exec": [
         "pm.test(\"Me returns 200\", function () {",
@@ -104,7 +104,7 @@
         "method": "GET",
         "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
         "url": { "raw": "{{baseURL}}/users?page=0&size=10&sort=name&dir=asc", "host": ["{{baseURL}}"], "path": ["users"], "query": [ { "key": "page", "value": "0" }, { "key": "size", "value": "10" }, { "key": "sort", "value": "name" }, { "key": "dir", "value": "asc" } ] },
-        "description": "List users (paged)."
+        "description": "List users (paged). Each user object includes 'avatarUrl' when available."
       }
     },
     {
@@ -114,7 +114,7 @@
         "method": "GET",
         "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
         "url": { "raw": "{{baseURL}}/users/1", "host": ["{{baseURL}}"], "path": ["users","1"] },
-        "description": "Get user by id (replace 1)."
+        "description": "Get user by id (replace 1). Response includes 'avatarUrl' when available."
       }
     },
     {
@@ -124,7 +124,8 @@
         "method": "POST",
         "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
         "body": { "mode": "raw", "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"+5511999999999\",\n  \"role\": \"client\"\n}" },
-        "url": { "raw": "{{baseURL}}/users", "host": ["{{baseURL}}"], "path": ["users"] }
+        "url": { "raw": "{{baseURL}}/users", "host": ["{{baseURL}}"], "path": ["users"] },
+        "description": "Create user (JSON). Avatar is not part of this request; upload using the separate Users - Upload Avatar endpoint after creation if desired."
       }
     },
     {
@@ -144,6 +145,32 @@
         "method": "DELETE",
         "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
         "url": { "raw": "{{baseURL}}/users/1", "host": ["{{baseURL}}"], "path": ["users","1"] }
+      }
+    },
+    {
+      "name": "Users - Upload Avatar",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "POST",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "file", "type": "file", "src": [] }
+          ]
+        },
+        "url": { "raw": "{{baseURL}}/users/1/avatar", "host": ["{{baseURL}}"], "path": ["users","1","avatar"] },
+        "description": "Upload avatar for user id 1. Use form-data and select file for 'file' field. Requires Authorization header. This is optional and separate from registration."
+      }
+    },
+    {
+      "name": "Users - Get Avatar",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/users/1/avatar", "host": ["{{baseURL}}"], "path": ["users","1","avatar"] },
+        "description": "Fetch avatar image for user id 1. Returns image binary; Postman will show it in the response body preview. ETag handling implemented on server."
       }
     },
     {
@@ -224,6 +251,32 @@
         "method": "DELETE",
         "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
         "url": { "raw": "{{baseURL}}/services/1", "host": ["{{baseURL}}"], "path": ["services","1"] }
+      }
+    },
+    {
+      "name": "Services - Upload Image",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "POST",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "file", "type": "file", "src": [] }
+          ]
+        },
+        "url": { "raw": "{{baseURL}}/services/1/image", "host": ["{{baseURL}}"], "path": ["services","1","image"] },
+        "description": "Upload image for service id 1. Use form-data and select file for 'file' field. Requires Authorization header."
+      }
+    },
+    {
+      "name": "Services - Get Image",
+      "request": {
+        "auth": { "type": "bearer" },
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/services/1/image", "host": ["{{baseURL}}"], "path": ["services","1","image"] },
+        "description": "Fetch image for service id 1. Returns image binary; Postman will show it in the response preview. ETag handling implemented on server."
       }
     },
     {
