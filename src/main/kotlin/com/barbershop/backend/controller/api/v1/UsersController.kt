@@ -80,7 +80,7 @@ class UsersController(
         val pathId = userService.getAvatarPath(id) ?: return ResponseEntity.notFound().build()
         val stored = imageStorageService.load(pathId)
         val ifNoneMatch = request.getHeader("If-None-Match")
-        if (ifNoneMatch != null && ifNoneMatch == "\"${'$'}{stored.etag}\"") {
+        if (ifNoneMatch != null && ifNoneMatch == "\"${stored.etag}\"") {
             return imageStorageService.notModified()
         }
         return imageStorageService.toResponseEntity(stored)
