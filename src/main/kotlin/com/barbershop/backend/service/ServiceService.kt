@@ -84,6 +84,6 @@ class ServiceService(
         price = price,
         durationMinutes = durationMinutes,
         isActive = isActive,
-        imageUrl = serviceId?.let { if (imagePath != null) "/api/v1/services/${'$'}it/image" else null }
+        imageUrl = serviceId?.let { if (imagePath != null) "/api/v1/services/$it/image" else null }
     )
 }

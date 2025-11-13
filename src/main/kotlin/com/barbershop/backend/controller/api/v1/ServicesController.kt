@@ -37,7 +37,8 @@ class ServicesController(
     @PostMapping("/services", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
     fun create(@RequestBody @Valid req: ServiceRequest): ResponseEntity<ServiceResponse> {
         val saved = serviceService.create(req)
-        return ResponseEntity.created(URI.create("/api/v1/services/${'$'}{saved.serviceId}")).body(saved)
+        return ResponseEntity.created(URI.create("/api/v1/services/${saved.serviceId}"))
+            .body(saved)
     }
 
     @PutMapping("/services/{id}", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
