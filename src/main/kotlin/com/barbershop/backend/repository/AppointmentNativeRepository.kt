@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository
 import java.math.BigDecimal
 import java.time.ZoneOffset
 import java.time.Instant
+import java.sql.Timestamp // added
 
 @Repository
 class AppointmentNativeRepository(
@@ -27,11 +28,12 @@ class AppointmentNativeRepository(
               FROM book_appointment(:clientId, :barberId, :serviceId, :startTime, :tz)
         """.trimIndent()
 
+        // Convert Instant to java.sql.Timestamp to ensure PostgreSQL infers timestamptz correctly
         val params = mapOf(
             "clientId" to clientId,
             "barberId" to barberId,
             "serviceId" to serviceId,
-            "startTime" to startUtc,
+            "startTime" to Timestamp.from(startUtc), // changed from Instant to Timestamp
             "tz" to tz
         )
 
@@ -46,4 +48,3 @@ class AppointmentNativeRepository(
         }.firstOrNull() ?: throw IllegalStateException("Não foi possível reservar o horário.")
     }
 }
-
