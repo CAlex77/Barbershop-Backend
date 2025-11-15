@@ -6,6 +6,8 @@ import com.barbershop.backend.dto.response.AppointmentResponse
 import com.barbershop.backend.dto.response.BookedAppointmentResponse
 import com.barbershop.backend.repository.AppointmentNativeRepository
 import com.barbershop.backend.repository.AppointmentRepository
+import com.barbershop.backend.repository.ClientRepository
+import com.barbershop.backend.repository.BarberRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
@@ -14,7 +16,9 @@ import java.time.Instant
 @Service
 class AppointmentService(
     private val appointmentRepository: AppointmentRepository,
-    private val appointmentNativeRepository: AppointmentNativeRepository
+    private val appointmentNativeRepository: AppointmentNativeRepository,
+    private val clientRepository: ClientRepository,
+    private val barberRepository: BarberRepository
 ) {
     fun list(page: Int, size: Int, sort: String?, dir: String?) = run {
         val direction = if (dir?.equals("desc", true) == true) Sort.Direction.DESC else Sort.Direction.ASC
@@ -36,6 +40,38 @@ class AppointmentService(
     fun listByBarber(barberId: Long) = appointmentRepository.findByBarberId(barberId).map { it.toResponse() }
 
     fun listByClient(clientId: Long) = appointmentRepository.findByClientId(clientId).map { it.toResponse() }
+
+    /**
+     * Return appointment if it belongs to the authenticated user.
+     * If role indicates barber, use barber id linked to the user; otherwise use client id.
+     */
+    fun getForUser(appointmentId: Long, userId: Long, role: String): AppointmentResponse? {
+        val apptEntity = appointmentRepository.findById(appointmentId).orElse(null) ?: return null
+        val roleLower = role.lowercase()
+        return if (roleLower.contains("barber") || roleLower.contains("barbeiro") || roleLower.contains("barber")) {
+            val barber = barberRepository.findByUserId(userId) ?: return null
+            val barberId = barber.barberId ?: return null
+            if (apptEntity.barberId == barberId) apptEntity.toResponse() else null
+        } else {
+            val client = clientRepository.findByUserId(userId) ?: return null
+            val clientId = client.clientId ?: return null
+            if (apptEntity.clientId == clientId) apptEntity.toResponse() else null
+        }
+    }
+
+    // New: list all appointments for the authenticated user (by clientId or barberId)
+    fun listForUser(userId: Long, role: String): List<AppointmentResponse> {
+        val roleLower = role.lowercase()
+        return if (roleLower.contains("barber") || roleLower.contains("barbeiro") || roleLower.contains("barber")) {
+            val barber = barberRepository.findByUserId(userId) ?: return emptyList()
+            val barberId = barber.barberId ?: return emptyList()
+            appointmentRepository.findByBarberId(barberId).map { it.toResponse() }
+        } else {
+            val client = clientRepository.findByUserId(userId) ?: return emptyList()
+            val clientId = client.clientId ?: return emptyList()
+            appointmentRepository.findByClientId(clientId).map { it.toResponse() }
+        }
+    }
 
     fun create(req: AppointmentRequest): AppointmentResponse {
         val saved = appointmentRepository.save(

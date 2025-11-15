@@ -4,7 +4,11 @@ import com.barbershop.backend.dto.request.UserRequest
 import com.barbershop.backend.dto.response.PagedResponse
 import com.barbershop.backend.dto.response.UserResponse
 import com.barbershop.backend.entity.User
+import com.barbershop.backend.entity.Client
+import com.barbershop.backend.entity.Barber
 import com.barbershop.backend.repository.UserRepository
+import com.barbershop.backend.repository.ClientRepository
+import com.barbershop.backend.repository.BarberRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
@@ -14,6 +18,8 @@ import org.springframework.web.multipart.MultipartFile
 @Suppress("unused")
 class UserService(
     private val userRepository: UserRepository,
+    private val clientRepository: ClientRepository,
+    private val barberRepository: BarberRepository,
     private val imageStorageService: ImageStorageService
 ) {
     fun list(page: Int, size: Int, sort: String?, dir: String?): PagedResponse<UserResponse> {
@@ -37,6 +43,25 @@ class UserService(
         val saved = userRepository.save(
             User(name = req.name, email = req.email, phone = req.phone, role = req.role)
         )
+
+        // create linked client or barber according to role
+        val roleLower = req.role.lowercase()
+        if (roleLower.contains("barber") || roleLower.contains("barbeiro") || roleLower.contains("barber")) {
+            // create barber record if not exists
+            val uid = saved.userId ?: 0
+            val existing = barberRepository.findByUserId(uid)
+            if (existing == null) {
+                barberRepository.save(Barber(userId = uid, name = saved.name, phone = saved.phone, isActive = true))
+            }
+        } else {
+            // default: create client
+            val uid = saved.userId ?: 0
+            val existing = clientRepository.findByUserId(uid)
+            if (existing == null) {
+                clientRepository.save(Client(userId = uid, isActive = true))
+            }
+        }
+
         return saved.toResponse()
     }
 
@@ -69,12 +94,19 @@ class UserService(
     fun getAvatarPath(userId: Long): String? =
         userRepository.findById(userId).map { it.avatarPath }.orElse(null)
 
-    private fun User.toResponse() = UserResponse(
-        userId = userId,
-        name = name,
-        email = email,
-        phone = phone,
-        role = role,
-        avatarUrl = if (avatarPath != null && userId != null) "/api/v1/users/${'$'}{userId}/avatar" else null
-    )
+    private fun User.toResponse(): UserResponse {
+        val uid = this.userId
+        val client = if (uid != null) clientRepository.findByUserId(uid) else null
+        val barber = if (uid != null) barberRepository.findByUserId(uid) else null
+        return UserResponse(
+            userId = userId,
+            name = name,
+            email = email,
+            phone = phone,
+            role = role,
+            avatarUrl = if (avatarPath != null && userId != null) "/api/v1/users/${'$'}{userId}/avatar" else null,
+            clientId = client?.clientId,
+            barberId = barber?.barberId
+        )
+    }
 }

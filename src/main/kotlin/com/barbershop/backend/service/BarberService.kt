@@ -46,6 +46,8 @@ class BarberService(
     }
 
     fun create(req: BarberRequest): BarberResponse {
+        // validate that the referenced user exists
+        if (!userRepository.existsById(req.userId)) throw IllegalArgumentException("User with id ${'$'}{req.userId} does not exist")
         val saved = barberRepository.save(Barber(userId = req.userId, name = req.name, phone = req.phone, isActive = true))
         val u = userRepository.findById(saved.userId).orElse(null)
         return BarberResponse(saved.barberId, saved.userId, saved.name, saved.phone, u?.name, u?.email)
@@ -54,6 +56,8 @@ class BarberService(
     fun update(id: Long, req: BarberRequest): BarberResponse? {
         val maybe = barberRepository.findById(id)
         if (maybe.isEmpty) return null
+        // validate user exists before applying
+        if (!userRepository.existsById(req.userId)) throw IllegalArgumentException("User with id ${'$'}{req.userId} does not exist")
         val entity = maybe.get().apply {
             userId = req.userId
             name = req.name

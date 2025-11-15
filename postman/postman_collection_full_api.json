@@ -19,7 +19,7 @@
           "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"teste@exemplo.com\",\n  \"password\": \"secret123\",\n  \"phone\": \"+5511999999999\"\n}"
         },
         "url": { "raw": "{{baseURL}}/auth/register", "host": ["{{baseURL}}"], "path": ["auth","register"] },
-        "description": "Create a new user. Expected: HTTP 201 and user data in response. NOTE: avatar/image is optional and is uploaded using the separate /users/{id}/avatar endpoint. Register does NOT accept image files."
+        "description": "Create a new user. Expected: HTTP 201 and user data in response. A linked Client is created by default when a user is created; if you create a user with role set to a barber role (when using the Users - Create endpoint), a Barber record will be created instead. NOTE: avatar/image is optional and is uploaded using the separate /users/{id}/avatar endpoint. Register does NOT accept image files."
       },
       "event": [
         {
@@ -34,6 +34,9 @@
             "  pm.test(\"Response has userId and email\", function () {",
             "    pm.expect(body).to.have.property('userId');",
             "    pm.expect(body).to.have.property('email');",
+            "  });",
+            "  pm.test(\"Response includes a clientId or barberId\", function () {",
+            "    pm.expect(body.clientId || body.barberId).to.be.ok;",
             "  });",
             "} catch (e) {",
             "  // ignore parse errors for non-json responses",
@@ -80,7 +83,7 @@
         "method": "GET",
         "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
         "url": { "raw": "{{baseURL}}/me", "host": ["{{baseURL}}"], "path": ["me"] },
-        "description": "Return current user info. Requires Authorization: Bearer <token>. Response now includes 'avatarUrl' when the user has uploaded an avatar."
+        "description": "Return current user info. Requires Authorization: Bearer <token>. Response now includes 'avatarUrl' when the user has uploaded an avatar, and also includes 'clientId' or 'barberId' when applicable."
       },
       "event": [ { "listen": "test", "script": { "exec": [
         "pm.test(\"Me returns 200\", function () {",
@@ -91,6 +94,9 @@
         "  pm.test(\"Response contains userId and email\", function () {",
         "    pm.expect(body).to.have.property('userId');",
         "    pm.expect(body).to.have.property('email');",
+        "  });",
+        "  pm.test(\"Response contains either clientId or barberId\", function () {",
+        "    pm.expect(body.clientId || body.barberId).to.be.ok;",
         "  });",
         "} catch (e) {",
         "  // ignore parse errors",
@@ -104,7 +110,7 @@
         "method": "GET",
         "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
         "url": { "raw": "{{baseURL}}/users?page=0&size=10&sort=name&dir=asc", "host": ["{{baseURL}}"], "path": ["users"], "query": [ { "key": "page", "value": "0" }, { "key": "size", "value": "10" }, { "key": "sort", "value": "name" }, { "key": "dir", "value": "asc" } ] },
-        "description": "List users (paged). Each user object includes 'avatarUrl' when available."
+        "description": "List users (paged). Each user object includes 'avatarUrl' when available, and will include 'clientId' or 'barberId' when applicable."
       }
     },
     {
@@ -114,7 +120,7 @@
         "method": "GET",
         "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
         "url": { "raw": "{{baseURL}}/users/1", "host": ["{{baseURL}}"], "path": ["users","1"] },
-        "description": "Get user by id (replace 1). Response includes 'avatarUrl' when available."
+        "description": "Get user by id (replace 1). Response includes 'avatarUrl' when available, and will include 'clientId' or 'barberId' when applicable."
       }
     },
     {
@@ -125,7 +131,7 @@
         "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
         "body": { "mode": "raw", "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"+5511999999999\",\n  \"role\": \"client\"\n}" },
         "url": { "raw": "{{baseURL}}/users", "host": ["{{baseURL}}"], "path": ["users"] },
-        "description": "Create user (JSON). Avatar is not part of this request; upload using the separate Users - Upload Avatar endpoint after creation if desired."
+        "description": "Create user (JSON). A linked Client will be created by default when creating a user; if you set 'role' to a barber role (e.g. 'barber' or 'ROLE_BARBER'), a Barber record will instead be created. Avatar is not part of this request; upload using the separate Users - Upload Avatar endpoint after creation if desired."
       }
     },
     {
@@ -360,7 +366,8 @@
         "method": "POST",
         "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
         "body": { "mode": "raw", "raw": "{\n  \"userId\": 1,\n  \"name\": \"Barber Bob\",\n  \"phone\": \"+5511777777777\"\n}" },
-        "url": { "raw": "{{baseURL}}/barbers", "host": ["{{baseURL}}"], "path": ["barbers"] }
+        "url": { "raw": "{{baseURL}}/barbers", "host": ["{{baseURL}}"], "path": ["barbers"] },
+        "description": "Create a barber. The request must reference an existing user id (userId). If the provided userId does not exist the server will return HTTP 400. If you want to create a barber linked to a user, first create the user (via Users - Create) specifying the barber role, or create the user then use this endpoint with that user's id."
       }
     },
     {
@@ -406,6 +413,80 @@
     {
       "name": "Notifications - List (placeholder)",
       "request": { "method": "GET", "url": { "raw": "{{baseURL}}/notifications", "host": ["{{baseURL}}"], "path": ["notifications"] } }
+    },
+    {
+      "name": "Appointments - Get For Me",
+      "request": {
+        "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/appointments/me/1", "host": ["{{baseURL}}"], "path": ["appointments","me","1"] },
+        "description": "Fetch a specific appointment by id, but only if it belongs to the authenticated user (client or barber). Returns 200 with the appointment if allowed, or 404 if not found or not owned by the user. Replace the final path segment (1) with a real appointment id when testing."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200 or 404', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200,404]);",
+              "});",
+              "if (pm.response.code === 200) {",
+              "  try {",
+              "    var body = pm.response.json();",
+              "    pm.test('Response contains appointmentId', function () {",
+              "      pm.expect(body).to.have.property('appointmentId');",
+              "    });",
+              "    pm.test('Response includes either clientId or barberId matching the caller', function () {",
+              "      pm.expect(body.clientId || body.barberId).to.be.ok;",
+              "    });",
+              "  } catch (e) {",
+              "    // ignore parse errors",
+              "  }",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Appointments - List For Me",
+      "request": {
+        "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{baseURL}}/appointments/me", "host": ["{{baseURL}}"], "path": ["appointments","me"] },
+        "description": "List all appointments that belong to the authenticated user (as client or barber). Returns 200 with an array (possibly empty)."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200 or 401', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200,401]);",
+              "});",
+              "if (pm.response.code === 200) {",
+              "  try {",
+              "    var body = pm.response.json();",
+              "    pm.test('Response is an array', function () {",
+              "      pm.expect(Array.isArray(body)).to.be.true;",
+              "    });",
+              "    if (body.length > 0) {",
+              "      pm.test('Array items have appointmentId', function () {",
+              "        pm.expect(body[0]).to.have.property('appointmentId');",
+              "      });",
+              "    }",
+              "  } catch (e) {",
+              "    // ignore parse errors",
+              "  }",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
     }
   ],
   "variable": [

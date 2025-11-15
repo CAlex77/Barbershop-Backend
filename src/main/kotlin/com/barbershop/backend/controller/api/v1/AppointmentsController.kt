@@ -4,9 +4,11 @@ import com.barbershop.backend.dto.request.AppointmentRequest
 import com.barbershop.backend.dto.response.AppointmentResponse
 import com.barbershop.backend.dto.response.PagedResponse
 import com.barbershop.backend.service.AppointmentService
+import com.barbershop.backend.security.UserPrincipal
 import jakarta.validation.Valid
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 import java.net.URI
 
@@ -36,6 +38,20 @@ class AppointmentsController(
     fun listByClient(@RequestParam clientId: Long): List<AppointmentResponse> =
         appointmentService.listByClient(clientId)
 
+    @GetMapping("/appointments/me", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun listForMe(@AuthenticationPrincipal principal: UserPrincipal?): ResponseEntity<List<AppointmentResponse>> {
+        if (principal == null) return ResponseEntity.status(401).build()
+        val res = appointmentService.listForUser(principal.userId, principal.role)
+        return ResponseEntity.ok(res)
+    }
+
+    @GetMapping("/appointments/me/{id}", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun getForMe(@PathVariable id: Long, @AuthenticationPrincipal principal: UserPrincipal?): ResponseEntity<AppointmentResponse> {
+        if (principal == null) return ResponseEntity.status(401).build()
+        val res = appointmentService.getForUser(id, principal.userId, principal.role)
+        return res?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
+    }
+
     @PostMapping(
         "/appointments",
         consumes = [MediaType.APPLICATION_JSON_VALUE],
@@ -43,7 +59,7 @@ class AppointmentsController(
     )
     fun create(@RequestBody @Valid req: AppointmentRequest): ResponseEntity<AppointmentResponse> {
         val saved = appointmentService.create(req)
-        return ResponseEntity.created(URI.create("/api/v1/appointments/${saved.appointmentId}")).body(saved)
+        return ResponseEntity.created(URI.create("/api/v1/appointments/${'$'}{saved.appointmentId}")).body(saved)
     }
 
     @PutMapping(

@@ -11,5 +11,7 @@ data class MeResponse(
     val email: String?,
     val phone: String?,
     val role: String,
-    val avatarUrl: String? = null
+    val avatarUrl: String? = null,
+    val clientId: Long? = null,
+    val barberId: Long? = null
 )

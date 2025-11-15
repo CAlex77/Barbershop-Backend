@@ -5,7 +5,11 @@ import com.barbershop.backend.dto.request.RegisterRequest
 import com.barbershop.backend.dto.response.AuthResponse
 import com.barbershop.backend.dto.response.MeResponse
 import com.barbershop.backend.entity.User
+import com.barbershop.backend.entity.Client
+import com.barbershop.backend.entity.Barber
 import com.barbershop.backend.repository.UserRepository
+import com.barbershop.backend.repository.ClientRepository
+import com.barbershop.backend.repository.BarberRepository
 import com.barbershop.backend.security.JwtUtil
 import com.barbershop.backend.security.UserPrincipal
 import org.slf4j.LoggerFactory
@@ -15,6 +19,8 @@ import org.springframework.stereotype.Service
 @Service
 class AuthService(
     private val userRepository: UserRepository,
+    private val clientRepository: ClientRepository,
+    private val barberRepository: BarberRepository,
     private val passwordEncoder: PasswordEncoder,
     private val jwtUtil: JwtUtil
 ) {
@@ -39,8 +45,29 @@ class AuthService(
         val hashed = passwordEncoder.encode(sanitized)
         val user = User(name = req.name, email = emailSanitized, passwordHash = hashed, phone = req.phone)
         val saved = userRepository.save(user)
+
+        // create linked client by default when registering (consistent with UserService behavior)
+        val roleLower = (saved.role ?: "client").lowercase()
+        val uid = saved.userId ?: 0
+        if (roleLower.contains("barber") || roleLower.contains("barbeiro") || roleLower.contains("barber")) {
+            val existingBarber = barberRepository.findByUserId(uid)
+            if (existingBarber == null) {
+                barberRepository.save(Barber(userId = uid, name = saved.name, phone = saved.phone, isActive = true))
+            }
+        } else {
+            val existingClient = clientRepository.findByUserId(uid)
+            if (existingClient == null) {
+                clientRepository.save(Client(userId = uid, isActive = true))
+            }
+        }
+
         val avatarUrl = if (saved.avatarPath != null && saved.userId != null) "/api/v1/users/${'$'}{saved.userId}/avatar" else null
-        return MeResponse(saved.userId, saved.name, saved.email, saved.phone, saved.role, avatarUrl)
+
+        // find created client/barber ids to include in response
+        val client = clientRepository.findByUserId(uid)
+        val barber = barberRepository.findByUserId(uid)
+
+        return MeResponse(saved.userId, saved.name, saved.email, saved.phone, saved.role, avatarUrl, client?.clientId, barber?.barberId)
     }
 
     fun login(req: LoginRequest): AuthResponse {
@@ -85,7 +112,10 @@ class AuthService(
         if (principal is UserPrincipal) {
             val user = userRepository.findById(principal.userId).orElse(null) ?: return null
             val avatarUrl = if (user.avatarPath != null && user.userId != null) "/api/v1/users/${'$'}{user.userId}/avatar" else null
-            return MeResponse(user.userId, user.name, user.email, user.phone, user.role, avatarUrl)
+            val uid = user.userId ?: 0
+            val client = clientRepository.findByUserId(uid)
+            val barber = barberRepository.findByUserId(uid)
+            return MeResponse(user.userId, user.name, user.email, user.phone, user.role, avatarUrl, client?.clientId, barber?.barberId)
         }
         return null
     }
