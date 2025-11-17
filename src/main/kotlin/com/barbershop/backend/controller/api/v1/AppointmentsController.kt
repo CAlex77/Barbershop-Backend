@@ -59,7 +59,8 @@ class AppointmentsController(
     )
     fun create(@RequestBody @Valid req: AppointmentRequest): ResponseEntity<AppointmentResponse> {
         val saved = appointmentService.create(req)
-        return ResponseEntity.created(URI.create("/api/v1/appointments/${'$'}{saved.appointmentId}")).body(saved)
+        val location = URI.create("/api/v1/appointments/${saved.appointmentId}")
+        return ResponseEntity.created(location).body(saved)
     }
 
     @PutMapping(
