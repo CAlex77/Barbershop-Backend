@@ -8,6 +8,8 @@ import com.barbershop.backend.repository.AppointmentNativeRepository
 import com.barbershop.backend.repository.AppointmentRepository
 import com.barbershop.backend.repository.ClientRepository
 import com.barbershop.backend.repository.BarberRepository
+import com.barbershop.backend.repository.UserRepository
+import com.barbershop.backend.repository.ServiceRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
@@ -18,7 +20,9 @@ class AppointmentService(
     private val appointmentRepository: AppointmentRepository,
     private val appointmentNativeRepository: AppointmentNativeRepository,
     private val clientRepository: ClientRepository,
-    private val barberRepository: BarberRepository
+    private val barberRepository: BarberRepository,
+    private val userRepository: UserRepository,
+    private val serviceRepository: ServiceRepository
 ) {
     fun list(page: Int, size: Int, sort: String?, dir: String?) = run {
         val direction = if (dir?.equals("desc", true) == true) Sort.Direction.DESC else Sort.Direction.ASC
@@ -113,7 +117,15 @@ class AppointmentService(
         startTime = startTime,
         endTime = endTime,
         status = status,
-        totalPrice = totalPrice
+        totalPrice = totalPrice,
+        // Resolve names where possible; fall back to null when not found
+        clientName = run {
+            val client = clientRepository.findById(clientId).orElse(null) ?: return@run null
+            val user = client.userId.let { uid -> userRepository.findById(uid).orElse(null) } ?: return@run null
+            user.name
+        },
+        barberName = barberRepository.findById(barberId).orElse(null)?.name,
+        serviceName = serviceRepository.findById(serviceId).orElse(null)?.name
     )
 
     /**

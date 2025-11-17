@@ -11,6 +11,9 @@ data class AppointmentResponse(
     val startTime: OffsetDateTime,
     val endTime: OffsetDateTime?,
     val status: String,
-    val totalPrice: BigDecimal?
+    val totalPrice: BigDecimal?,
+    // New: human-friendly names
+    val clientName: String?,
+    val barberName: String?,
+    val serviceName: String?
 )
-
