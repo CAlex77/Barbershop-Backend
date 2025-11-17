@@ -58,6 +58,20 @@ class ImageStorageService(
         return StoredImage(id, target, ct, size, etag, Instant.ofEpochMilli(lastMod))
     }
 
+    /**
+     * Delete an image by id from storage. Returns true if the file was deleted or didn't exist,
+     * false if deletion failed.
+     */
+    fun delete(id: String): Boolean {
+        try {
+            val target = root.resolve(id)
+            return Files.deleteIfExists(target)
+        } catch (ex: Exception) {
+            // don't throw to caller; log could be added here if a logging framework is present
+            return false
+        }
+    }
+
     fun fileUrlFor(id: String) = "/api/v1/images/$id"
 
     fun toResponseEntity(img: StoredImage): ResponseEntity<FileSystemResource> =
@@ -77,4 +91,3 @@ class ImageStorageService(
         return bytes.joinToString("") { "%02x".format(it) }
     }
 }
-

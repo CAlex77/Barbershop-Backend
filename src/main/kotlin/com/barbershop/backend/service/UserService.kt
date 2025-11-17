@@ -85,9 +85,19 @@ class UserService(
 
     fun uploadAvatar(userId: Long, file: MultipartFile): UserResponse? {
         val user = userRepository.findById(userId).orElse(null) ?: return null
+        // Preserve old avatar id so we can delete it after successful update
+        val oldAvatar = user.avatarPath
         val stored = imageStorageService.save(file)
         user.avatarPath = stored.id
         val saved = userRepository.save(user)
+        // Best-effort cleanup of previous avatar file (ignore failures)
+        if (oldAvatar != null && oldAvatar != stored.id) {
+            try {
+                imageStorageService.delete(oldAvatar)
+            } catch (_: Exception) {
+                // ignore cleanup errors
+            }
+        }
         return saved.toResponse()
     }
 
