@@ -487,6 +487,40 @@
           }
         }
       ]
+    },
+    {
+      "name": "Appointments - Cancel (DELETE /appointments/me/{id})",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            { "key": "token", "value": "{{token}}", "type": "string" }
+          ]
+        },
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{baseURL}}/appointments/me/1",
+          "host": ["{{baseURL}}"],
+          "path": ["appointments","me","1"]
+        },
+        "description": "Cancela (marca como CANCELLED) um agendamento que pertence ao usuário autenticado. Substitua 1 pelo id real retornado em 'Appointments - List For Me'."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 204 or 404', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([204,404]);",
+              "});"
+            ]
+          }
+        }
+      ]
     }
   ],
   "variable": [

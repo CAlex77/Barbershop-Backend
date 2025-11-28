@@ -2,6 +2,7 @@ package com.barbershop.backend.service
 
 import com.barbershop.backend.dto.request.AppointmentRequest
 import com.barbershop.backend.dto.request.BookAppointmentRequest
+import com.barbershop.backend.dto.request.RescheduleAppointmentRequest
 import com.barbershop.backend.dto.response.AppointmentResponse
 import com.barbershop.backend.dto.response.BookedAppointmentResponse
 import com.barbershop.backend.repository.AppointmentNativeRepository
@@ -140,5 +141,91 @@ class AppointmentService(
             startUtc = startInstant,
             tz = req.tz ?: "America/Sao_Paulo"
         )
+    }
+
+    /**
+     * Reschedule an appointment for the authenticated user.
+     * Validates ownership and slot availability before updating.
+     */
+    fun rescheduleForUser(
+        appointmentId: Long,
+        userId: Long,
+        role: String,
+        req: RescheduleAppointmentRequest
+    ): AppointmentResponse? {
+        val apptEntity = appointmentRepository.findById(appointmentId).orElse(null) ?: return null
+
+        // Verify ownership
+        val hasPermission = checkOwnership(apptEntity, userId, role)
+        if (!hasPermission) {
+            throw IllegalArgumentException("Você não tem permissão para reagendar este agendamento")
+        }
+
+        // Check if appointment can be rescheduled
+        if (apptEntity.status !in listOf("SCHEDULED", "CONFIRMED")) {
+            throw IllegalArgumentException("Apenas agendamentos confirmados ou agendados podem ser reagendados (status atual: ${apptEntity.status})")
+        }
+
+        val startInstant = Instant.parse(req.startTime)
+
+        // Validate new slot availability (excluding current appointment)
+        val validation = appointmentNativeRepository.validateSlotForReschedule(
+            appointmentId = appointmentId,
+            barberId = req.barberId,
+            serviceId = req.serviceId,
+            startUtc = startInstant,
+            tz = req.tz ?: "America/Sao_Paulo"
+        )
+
+        // Update appointment with new details
+        apptEntity.apply {
+            barberId = req.barberId
+            serviceId = req.serviceId
+            startTime = startInstant.atOffset(java.time.ZoneOffset.UTC)
+            endTime = validation.endTime
+            totalPrice = validation.totalPrice
+        }
+
+        return appointmentRepository.save(apptEntity).toResponse()
+    }
+
+    /**
+     * Cancel an appointment for the authenticated user.
+     * Soft deletes by changing status to CANCELLED.
+     */
+    fun cancelForUser(appointmentId: Long, userId: Long, role: String): Boolean {
+        val apptEntity = appointmentRepository.findById(appointmentId).orElse(null) ?: return false
+
+        // Verify ownership (both client and barber can cancel)
+        val hasPermission = checkOwnership(apptEntity, userId, role)
+        if (!hasPermission) {
+            throw IllegalArgumentException("Você não tem permissão para cancelar este agendamento")
+        }
+
+        // Check if appointment can be cancelled
+        if (apptEntity.status in listOf("CANCELLED", "COMPLETED", "NO_SHOW")) {
+            throw IllegalArgumentException("Este agendamento não pode ser cancelado (status atual: ${apptEntity.status})")
+        }
+
+        // Soft delete by updating status
+        apptEntity.status = "CANCELLED"
+        appointmentRepository.save(apptEntity)
+        return true
+    }
+
+    /**
+     * Helper to check if user owns the appointment.
+     */
+    private fun checkOwnership(appointment: com.barbershop.backend.entity.Appointment, userId: Long, role: String): Boolean {
+        val roleLower = role.lowercase()
+        return if (roleLower.contains("barber") || roleLower.contains("barbeiro")) {
+            val barber = barberRepository.findByUserId(userId) ?: return false
+            val barberId = barber.barberId ?: return false
+            appointment.barberId == barberId
+        } else {
+            val client = clientRepository.findByUserId(userId) ?: return false
+            val clientId = client.clientId ?: return false
+            appointment.clientId == clientId
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.barbershop.backend.controller.api.v1
 
 import com.barbershop.backend.dto.request.AppointmentRequest
+import com.barbershop.backend.dto.request.RescheduleAppointmentRequest
 import com.barbershop.backend.dto.response.AppointmentResponse
 import com.barbershop.backend.dto.response.PagedResponse
 import com.barbershop.backend.service.AppointmentService
@@ -74,4 +75,40 @@ class AppointmentsController(
     @DeleteMapping("/appointments/{id}")
     fun delete(@PathVariable id: Long): ResponseEntity<Void> =
         if (appointmentService.delete(id)) ResponseEntity.noContent().build() else ResponseEntity.notFound().build()
+
+    /**
+     * Reschedule an appointment for the authenticated user.
+     * Validates ownership and slot availability.
+     */
+    @PutMapping(
+        "/appointments/me/{id}",
+        consumes = [MediaType.APPLICATION_JSON_VALUE],
+        produces = [MediaType.APPLICATION_JSON_VALUE]
+    )
+    fun rescheduleForMe(
+        @PathVariable id: Long,
+        @RequestBody @Valid req: RescheduleAppointmentRequest,
+        @AuthenticationPrincipal principal: UserPrincipal?
+    ): ResponseEntity<AppointmentResponse> {
+        if (principal == null) return ResponseEntity.status(401).build()
+        val updated = appointmentService.rescheduleForUser(id, principal.userId, principal.role, req)
+        return updated?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
+    }
+
+    /**
+     * Cancel an appointment for the authenticated user.
+     * Changes status to CANCELLED instead of hard delete.
+     */
+    @DeleteMapping("/appointments/me/{id}")
+    fun cancelForMe(
+        @PathVariable id: Long,
+        @AuthenticationPrincipal principal: UserPrincipal?
+    ): ResponseEntity<Void> {
+        if (principal == null) return ResponseEntity.status(401).build()
+        return if (appointmentService.cancelForUser(id, principal.userId, principal.role)) {
+            ResponseEntity.noContent().build()
+        } else {
+            ResponseEntity.notFound().build()
+        }
+    }
 }
