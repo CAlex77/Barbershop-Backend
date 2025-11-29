@@ -67,8 +67,8 @@ class AppointmentNativeRepository(
             ),
             slot_info AS (
                 SELECT 
-                    :startTime AS start_time,
-                    :startTime + make_interval(mins => (SELECT duration_minutes FROM svc)) AS end_time,
+                    (:startTime)::timestamptz AS start_time,
+                    (:startTime)::timestamptz + make_interval(mins => (SELECT duration_minutes FROM svc)) AS end_time,
                     (SELECT duration_minutes FROM svc) AS duration,
                     (SELECT price FROM svc) AS price
             )
