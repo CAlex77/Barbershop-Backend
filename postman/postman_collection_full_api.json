@@ -489,6 +489,58 @@
       ]
     },
     {
+      "name": "Appointments - Reschedule (PUT /appointments/me/{id})",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            { "key": "token", "value": "{{token}}", "type": "string" }
+          ]
+        },
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"barberId\": 1,\n  \"serviceId\": 1,\n  \"startTime\": \"2025-11-30T14:00:00Z\",\n  \"tz\": \"America/Sao_Paulo\"\n}"
+        },
+        "url": {
+          "raw": "{{baseURL}}/appointments/me/1",
+          "host": ["{{baseURL}}"],
+          "path": ["appointments","me","1"]
+        },
+        "description": "Reagenda (edita) um agendamento que pertence ao usuário autenticado. Valida disponibilidade do horário antes de atualizar. Substitua 1 pelo id real do agendamento. startTime deve estar no formato UTC (YYYY-MM-DDTHH:mm:ssZ). Retorna o agendamento atualizado ou 404 se não encontrado/não pertence ao usuário."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200 or 404', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200,404]);",
+              "});",
+              "if (pm.response.code === 200) {",
+              "  try {",
+              "    var body = pm.response.json();",
+              "    pm.test('Response contains appointmentId', function () {",
+              "      pm.expect(body).to.have.property('appointmentId');",
+              "    });",
+              "    pm.test('Response contains updated startTime', function () {",
+              "      pm.expect(body).to.have.property('startTime');",
+              "    });",
+              "  } catch (e) {",
+              "    // ignore parse errors",
+              "  }",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "Appointments - Cancel (DELETE /appointments/me/{id})",
       "request": {
         "auth": {
