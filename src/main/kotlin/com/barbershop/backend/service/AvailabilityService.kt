@@ -18,7 +18,7 @@ class AvailabilityService(
         barberId: Long,
         serviceId: Long,
         date: LocalDate,
-        zone: ZoneId = ZoneId.of("America/Sao_Paulo")
+        zone: ZoneId = ZoneId.of("America/Manaus")
     ): List<AvailabilitySlotResponse> {
         val service = serviceRepository.findById(serviceId).orElseThrow { IllegalArgumentException("Serviço inexistente") }
         val durationMinutes = service.durationMinutes

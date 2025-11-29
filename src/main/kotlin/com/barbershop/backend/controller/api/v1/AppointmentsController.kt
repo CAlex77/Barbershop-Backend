@@ -24,32 +24,36 @@ class AppointmentsController(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int,
         @RequestParam(required = false) sort: String?,
-        @RequestParam(required = false) dir: String?
-    ): PagedResponse<AppointmentResponse> = appointmentService.list(page, size, sort, dir)
+        @RequestParam(required = false) dir: String?,
+        @RequestParam(required = false) tz: String?
+    ): PagedResponse<AppointmentResponse> = appointmentService.list(page, size, sort, dir, tz)
 
     @GetMapping("/appointments/{id}", produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun getById(@PathVariable id: Long): ResponseEntity<AppointmentResponse> =
-        appointmentService.get(id)?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
+    fun getById(@PathVariable id: Long, @RequestParam(required = false) tz: String?): ResponseEntity<AppointmentResponse> =
+        appointmentService.get(id, tz)?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
 
     @GetMapping("/appointments/by_barber", produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun listByBarber(@RequestParam barberId: Long): List<AppointmentResponse> =
-        appointmentService.listByBarber(barberId)
+    fun listByBarber(@RequestParam barberId: Long, @RequestParam(required = false) tz: String?): List<AppointmentResponse> =
+        appointmentService.listByBarber(barberId, tz)
 
     @GetMapping("/appointments/by_client", produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun listByClient(@RequestParam clientId: Long): List<AppointmentResponse> =
-        appointmentService.listByClient(clientId)
+    fun listByClient(@RequestParam clientId: Long, @RequestParam(required = false) tz: String?): List<AppointmentResponse> =
+        appointmentService.listByClient(clientId, tz)
 
     @GetMapping("/appointments/me", produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun listForMe(@AuthenticationPrincipal principal: UserPrincipal?): ResponseEntity<List<AppointmentResponse>> {
+    fun listForMe(@AuthenticationPrincipal principal: UserPrincipal?, @RequestParam(required = false) tz: String?): ResponseEntity<List<AppointmentResponse>> {
         if (principal == null) return ResponseEntity.status(401).build()
-        val res = appointmentService.listForUser(principal.userId, principal.role)
+        // Default to Manaus when client doesn't provide tz to keep frontend display consistent
+        val effectiveTz = tz ?: "America/Manaus"
+        val res = appointmentService.listForUser(principal.userId, principal.role, effectiveTz)
         return ResponseEntity.ok(res)
     }
 
     @GetMapping("/appointments/me/{id}", produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun getForMe(@PathVariable id: Long, @AuthenticationPrincipal principal: UserPrincipal?): ResponseEntity<AppointmentResponse> {
+    fun getForMe(@PathVariable id: Long, @AuthenticationPrincipal principal: UserPrincipal?, @RequestParam(required = false) tz: String?): ResponseEntity<AppointmentResponse> {
         if (principal == null) return ResponseEntity.status(401).build()
-        val res = appointmentService.getForUser(id, principal.userId, principal.role)
+        val effectiveTz = tz ?: "America/Manaus"
+        val res = appointmentService.getForUser(id, principal.userId, principal.role, effectiveTz)
         return res?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
     }
 
@@ -89,9 +93,11 @@ class AppointmentsController(
         @PathVariable id: Long,
         @RequestBody @Valid req: RescheduleAppointmentRequest,
         @AuthenticationPrincipal principal: UserPrincipal?
+        , @RequestParam(required = false) tz: String?
     ): ResponseEntity<AppointmentResponse> {
         if (principal == null) return ResponseEntity.status(401).build()
-        val updated = appointmentService.rescheduleForUser(id, principal.userId, principal.role, req)
+        val effectiveTz = tz ?: "America/Manaus"
+        val updated = appointmentService.rescheduleForUser(id, principal.userId, principal.role, req, effectiveTz)
         return updated?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
     }
 

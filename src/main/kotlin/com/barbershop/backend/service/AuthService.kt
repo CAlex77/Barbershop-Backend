@@ -43,7 +43,9 @@ class AuthService(
         val existing = emailSanitized?.let { userRepository.findByEmail(it) }
         if (existing != null) throw IllegalArgumentException("Email already registered")
         val hashed = passwordEncoder.encode(sanitized)
-        val user = User(name = req.name, email = emailSanitized, passwordHash = hashed, phone = req.phone)
+        // allow caller to provide a desired role during registration (default to "client")
+        val roleSanitized = req.role?.trim()?.takeIf { it.isNotBlank() } ?: "client"
+        val user = User(name = req.name, email = emailSanitized, passwordHash = hashed, phone = req.phone, role = roleSanitized)
         val saved = userRepository.save(user)
 
         // create linked client by default when registering (consistent with UserService behavior)
